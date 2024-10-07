@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Files</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 100px);
+            padding: 10px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .file-item input {
+            margin-right: 10px;
+        }
+
+        .message {
+            margin-top: 20px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>File Search</h1>
+    <input type="text" id="searchText" placeholder="Enter search text">
+    <button onclick="searchFiles()">Search</button>
+
+    <div class="file-list" id="fileList"></div>
+    <div class="message" id="message"></div>
+</div>
+
+<script>
+    function searchFiles() {
+        const searchText = document.getElementById('searchText').value;
+        const fileList = document.getElementById('fileList');
+        const message = document.getElementById('message');
+
+        // Clear previous data
+        fileList.innerHTML = '';
+        message.innerHTML = '';
+
+        if (!searchText) {
+            message.innerHTML = 'Please enter search text.';
+            return;
+        }
+
+        // Simulate API call
+        const data = simulateApiCall(searchText);
+
+        if (data.length === 0) {
+            message.innerHTML = 'No file found with entered search criteria.';
+        } else {
+            let fileItems = '';
+            data.forEach(file => {
+                fileItems += `
+                    <div class="file-item">
+                        <label>
+                            <input type="checkbox" class="file-checkbox" data-file="${file.name}">
+                            ${file.name} (Occurrences: ${file.occurrences})
+                        </label>
+                    </div>
+                `;
+            });
+
+            fileItems += `
+                <div>
+                    <label>
+                        <input type="checkbox" onclick="selectAll(this)">
+                        Select All
+                    </label>
+                </div>
+            `;
+
+            fileList.innerHTML = fileItems;
+        }
+    }
+
+    function simulateApiCall(searchText) {
+        // Simulated file data for the example
+        const files = [
+            { name: 'file1.txt', occurrences: 4 },
+            { name: 'file2.txt', occurrences: 2 },
+            { name: 'file3.txt', occurrences: 7 }
+        ];
+
+        // Filter files based on the search text
+        return files.filter(file => file.name.includes(searchText) || String(file.occurrences).includes(searchText));
+    }
+
+    function selectAll(selectAllCheckbox) {
+        const checkboxes = document.querySelectorAll('.file-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+    }
+</script>
+
+</body>
+</html>
