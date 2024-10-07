@@ -45,6 +45,15 @@
             margin-top: 20px;
             color: red;
         }
+
+        .additional-input {
+            margin-top: 20px;
+        }
+
+        .additional-input input[type="text"] {
+            width: calc(100% - 120px);
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +65,12 @@
 
     <div class="file-list" id="fileList"></div>
     <div class="message" id="message"></div>
+
+    <!-- Additional input box and submit button -->
+    <div class="additional-input" id="additionalInput" style="display: none;">
+        <input type="text" id="additionalText" placeholder="Enter additional input">
+        <button onclick="submitAdditional()">Submit</button>
+    </div>
 </div>
 
 <script>
@@ -63,10 +78,12 @@
         const searchText = document.getElementById('searchText').value;
         const fileList = document.getElementById('fileList');
         const message = document.getElementById('message');
+        const additionalInput = document.getElementById('additionalInput');
 
         // Clear previous data
         fileList.innerHTML = '';
         message.innerHTML = '';
+        additionalInput.style.display = 'none'; // Hide additional input initially
 
         if (!searchText) {
             message.innerHTML = 'Please enter search text.';
@@ -101,6 +118,7 @@
             `;
 
             fileList.innerHTML = fileItems;
+            additionalInput.style.display = 'block'; // Show additional input when data is found
         }
     }
 
@@ -121,6 +139,12 @@
         checkboxes.forEach(checkbox => {
             checkbox.checked = selectAllCheckbox.checked;
         });
+    }
+
+    function submitAdditional() {
+        const additionalText = document.getElementById('additionalText').value;
+        alert('Additional input submitted: ' + additionalText);
+        // Implement your logic here for submitting additional input
     }
 </script>
 
