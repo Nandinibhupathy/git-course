@@ -1,4 +1,4 @@
-8<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -150,6 +150,64 @@
 
 </body>
 </html>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Finder and Masking Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Text Finder and Masking Tool</h1>
+        
+        <div class="search-section">
+            <label for="search-text">Search Text:</label>
+            <input type="text" id="search-text" name="search-text" placeholder="Enter text to search">
+            <button type="button" id="search-btn">Search</button>
+        </div>
+
+        <table class="file-list">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>File Name</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="checkbox" id="file1" name="file1"></td>
+                    <td>ReferenceData.xml</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox" id="file2" name="file2"></td>
+                    <td>PublishContent.json</td>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox" id="file3" name="file3"></td>
+                    <td>Disclosure.txt</td>
+                    <td>5</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="mask-section">
+            <label for="mask-char">Mask with character:</label>
+            <input type="text" id="mask-char" name="mask-char" placeholder="*">
+            <button type="submit">Submit</button>
+        </div>
+    </div>
+</body>
+</html>
+
+
 
 
 
