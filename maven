@@ -1,0 +1,195 @@
+pom.xml
+
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example.demo</groupId>
+    <artifactId>backend</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <dependencies>
+        <!-- Spring Boot Starter Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- For JSON processing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+
+java
+
+
+package com.example.demo;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+public class FileSearchController {
+
+    @GetMapping("/search")
+    public List<FileInfo> searchFiles(@RequestParam String searchText) {
+        // Mocked file names for now
+        List<FileInfo> files = new ArrayList<>();
+        files.add(new FileInfo("file1.txt", 4));
+        files.add(new FileInfo("file2.txt", 2));
+        files.add(new FileInfo("file3.txt", 7));
+
+        return files;
+    }
+
+    public static class FileInfo {
+        private String fileName;
+        private int count;
+
+        public FileInfo(String fileName, int count) {
+            this.fileName = fileName;
+            this.count = count;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+    }
+}
+
+
+
+
+index.html
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Finder and Masking Tool</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Text Finder and Masking Tool</h1>
+
+        <div class="search-section">
+            <label for="search-text">Search Text:</label>
+            <input type="text" id="search-text" name="search-text" placeholder="Enter text to search">
+            <button type="button" id="search-btn">Search</button>
+        </div>
+
+        <table class="file-list">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>File Name</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic rows will be inserted here -->
+            </tbody>
+        </table>
+
+        <div class="mask-section">
+            <label for="mask-char">Mask with character:</label>
+            <input type="text" id="mask-char" name="mask-char" placeholder="*">
+            <button type="submit">Submit</button>
+        </div>
+    </div>
+</body>
+</html>
+
+
+-------
+
+styles :
+
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.search-section, .mask-section {
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+
+-----
+
+
+js :
+
+
+
+document.getElementById('search-btn').addEventListener('click', async function () {
+    const searchText = document.getElementById("search-text").value;
+    const response = await fetch(`/search?searchText=${searchText}`);
+    const files = await response.json();
+
+    // Clear the current table rows
+    const tbody = document.querySelector(".file-list tbody");
+    tbody.innerHTML = "";
+
+    // Add new rows from response
+    files.forEach(file => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td><input type="checkbox"></td>
+            <td>${file.fileName}</td>
+            <td>${file.count}</td>
+        `;
+        tbody.appendChild(row);
+    });
+});
