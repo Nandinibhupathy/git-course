@@ -44,13 +44,13 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
+
 import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import org.json.JSONObject;
 
 public class SimpleHttpServer {
 
@@ -79,18 +79,17 @@ public class SimpleHttpServer {
                     requestBody.append(line);
                 }
 
-                // Convert the request body to JSON
-                JSONObject jsonRequest = new JSONObject(requestBody.toString());
+                // Manually parse the incoming JSON (assuming it's simple and in the form {"message": "your_message"})
+                String requestBodyStr = requestBody.toString();
+                String message = parseMessageFromJson(requestBodyStr);
 
-                // Process the data (you can access jsonRequest.get("message") for the data sent)
-                System.out.println("Received: " + jsonRequest.getString("message"));
+                System.out.println("Received: " + message);
 
-                // Create a response in JSON format
-                JSONObject jsonResponse = new JSONObject();
-                jsonResponse.put("status", "Received: " + jsonRequest.getString("message"));
+                // Manually create a JSON response
+                String jsonResponse = "{\"status\":\"Received: " + message + "\"}";
 
                 // Send the response back to the client
-                byte[] responseBytes = jsonResponse.toString().getBytes(StandardCharsets.UTF_8);
+                byte[] responseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, responseBytes.length);
 
@@ -102,6 +101,20 @@ public class SimpleHttpServer {
                 // Respond with 405 if method is not POST
                 exchange.sendResponseHeaders(405, -1);
             }
+        }
+
+        // Simple function to extract the value of "message" from the JSON-like string
+        private String parseMessageFromJson(String json) {
+            // Basic extraction by looking for the "message" field. Assuming format {"message": "value"}
+            String prefix = "\"message\":\"";
+            int startIndex = json.indexOf(prefix) + prefix.length();
+            int endIndex = json.indexOf("\"", startIndex);
+
+            if (startIndex > prefix.length() && endIndex > startIndex) {
+                return json.substring(startIndex, endIndex);
+            }
+
+            return "No message found";
         }
     }
 }
