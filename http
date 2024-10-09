@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Java HTTP Server Example</title>
+</head>
+<body>
+    <h1>Send Data to Java Server</h1>
+    <form id="dataForm">
+        <input type="text" id="dataInput" placeholder="Enter some data" />
+        <button type="submit">Send</button>
+    </form>
+
+    <p id="response"></p>
+
+    <script>
+        document.getElementById("dataForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const data = document.getElementById("dataInput").value;
+
+            fetch('http://localhost:8000/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: data })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("response").innerText = "Server response: " + data.status;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+import java.io.OutputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONObject;
+
+public class SimpleHttpServer {
+
+    public static void main(String[] args) throws Exception {
+        // Create the server, listening on port 8000
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+
+        // Create a context for the /data endpoint
+        server.createContext("/data", new DataHandler());
+
+        // Set the default executor
+        server.setExecutor(null);
+        server.start();
+        System.out.println("Server started on port 8000");
+    }
+
+    static class DataHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("POST".equals(exchange.getRequestMethod())) {
+                // Read request body
+                BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8));
+                StringBuilder requestBody = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    requestBody.append(line);
+                }
+
+                // Convert the request body to JSON
+                JSONObject jsonRequest = new JSONObject(requestBody.toString());
+
+                // Process the data (you can access jsonRequest.get("message") for the data sent)
+                System.out.println("Received: " + jsonRequest.getString("message"));
+
+                // Create a response in JSON format
+                JSONObject jsonResponse = new JSONObject();
+                jsonResponse.put("status", "Received: " + jsonRequest.getString("message"));
+
+                // Send the response back to the client
+                byte[] responseBytes = jsonResponse.toString().getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBytes.length);
+
+                OutputStream outputStream = exchange.getResponseBody();
+                outputStream.write(responseBytes);
+                outputStream.flush();
+                outputStream.close();
+            } else {
+                // Respond with 405 if method is not POST
+                exchange.sendResponseHeaders(405, -1);
+            }
+        }
+    }
+}
