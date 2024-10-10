@@ -1,0 +1,79 @@
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+
+public class JsonArrayHttpServer {
+
+    public static void main(String[] args) throws IOException {
+        // Create an HTTP server listening on port 8080
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+
+        // Create a context that listens for requests on the "/jsonArray" endpoint
+        server.createContext("/jsonArray", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                // Define the JSON array to be returned
+                String jsonArrayResponse = "["
+                        + "{ \"message\": \"Hello from Java Server 1!\", \"status\": \"success\" },"
+                        + "{ \"message\": \"Hello from Java Server 2!\", \"status\": \"success\" },"
+                        + "{ \"message\": \"Hello from Java Server 3!\", \"status\": \"success\" }"
+                        + "]";
+
+                // Set the response headers and status code (200 OK)
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, jsonArrayResponse.length());
+
+                // Write the JSON array to the response body
+                OutputStream os = exchange.getResponseBody();
+                os.write(jsonArrayResponse.getBytes());
+                os.close();
+            }
+        });
+
+        // Start the server
+        server.start();
+        System.out.println("Server is listening on port 8080");
+    }
+}
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch JSON Array</title>
+</head>
+<body>
+    <h1>Messages from Java Server:</h1>
+    <ul id="messagesList"></ul>
+
+    <script>
+        // Use the Fetch API to make a request to the Java server
+        fetch('http://localhost:8080/jsonArray')
+            .then(response => response.json())  // Parse the response as JSON array
+            .then(data => {
+                // Get the messagesList element
+                const messagesList = document.getElementById('messagesList');
+
+                // Iterate over the JSON array and display each object
+                data.forEach(item => {
+                    // Create a list item for each message
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Message: ${item.message}, Status: ${item.status}`;
+                    messagesList.appendChild(listItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching JSON array:', error);
+            });
+    </script>
+</body>
+</html>
