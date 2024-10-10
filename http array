@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
-public class JsonArrayHttpServer {
+public class JsonArrayHttpServerWithCORS {
 
     public static void main(String[] args) throws IOException {
         // Create an HTTP server listening on port 8080
@@ -21,6 +21,11 @@ public class JsonArrayHttpServer {
                         + "{ \"message\": \"Hello from Java Server 2!\", \"status\": \"success\" },"
                         + "{ \"message\": \"Hello from Java Server 3!\", \"status\": \"success\" }"
                         + "]";
+
+                // Add CORS headers to the response
+                exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");  // Allows all origins
+                exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
 
                 // Set the response headers and status code (200 OK)
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -38,6 +43,9 @@ public class JsonArrayHttpServer {
         System.out.println("Server is listening on port 8080");
     }
 }
+
+
+
 
 
 
