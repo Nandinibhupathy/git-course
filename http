@@ -133,3 +133,48 @@ public class SimpleHttpServer {
         }
     }
 }
+
+
+
+
+
+
+let selectedFiles = []; // Array to store selected file names
+
+// Function to handle individual checkbox selection
+function handleCheckboxChange(checkbox) {
+    const fileName = checkbox.getAttribute('data-file');
+    
+    if (checkbox.checked) {
+        // Add to the list if checked and not already in the list
+        if (!selectedFiles.includes(fileName)) {
+            selectedFiles.push(fileName);
+        }
+    } else {
+        // Remove from the list if unchecked
+        selectedFiles = selectedFiles.filter(file => file !== fileName);
+    }
+    console.log(selectedFiles); // Log the selected files for verification
+}
+
+// Function to handle "Select All" checkbox
+function selectAll(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked; // Check/uncheck all
+        handleCheckboxChange(checkbox); // Update the list accordingly
+    });
+}
+
+// Event listener for individual checkboxes
+document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        handleCheckboxChange(this);
+    });
+});
+
+// Event listener for the "Select All" checkbox
+document.getElementById('select-all').addEventListener('change', function() {
+    selectAll(this);
+});
