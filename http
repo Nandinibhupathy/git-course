@@ -178,3 +178,54 @@ document.querySelectorAll('.file-checkbox').forEach(checkbox => {
 document.getElementById('select-all').addEventListener('change', function() {
     selectAll(this);
 });
+
+
+
+
+
+
+
+import com.sun.net.httpserver.HttpExchange;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+public class MaskerHandler {
+
+    public void handle(HttpExchange exchange) throws IOException {
+        if ("PUT".equals(exchange.getRequestMethod())) {
+            InputStream inputStream = exchange.getRequestBody();
+            String requestBody = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            
+            parseMessageFromJson(requestBody);
+
+            // Sending response (optional)
+            String response = "Data received";
+            exchange.sendResponseHeaders(200, response.length());
+            exchange.getResponseBody().write(response.getBytes());
+            exchange.close();
+        }
+    }
+
+    // Function to parse JSON without external libraries
+    public static void parseMessageFromJson(String json) {
+        String message = extractValue(json, "message");
+        String selectedFiles = extractValue(json, "selectedFiles");
+
+        System.out.println("Message: " + message);
+        System.out.println("Selected Files: " + selectedFiles);
+    }
+
+    // Helper function to manually extract values from JSON-like strings
+    public static String extractValue(String json, String key) {
+        String searchKey = "\"" + key + "\":";
+        int startIndex = json.indexOf(searchKey) + searchKey.length();
+        if (startIndex == -1) return null;
+
+        char delimiter = json.charAt(startIndex) == '[' ? ']' : '"'; // Handle array or string
+        startIndex = json.indexOf(delimiter == ']' ? '[' : '"', startIndex) + 1;
+        int endIndex = json.indexOf(delimiter, startIndex);
+
+        return json.substring(startIndex, endIndex);
+    }
+}
