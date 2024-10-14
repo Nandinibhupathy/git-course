@@ -1,0 +1,171 @@
+To connect Java with MySQL and store files along with their metadata (like file name, content, and extension), follow these steps:
+
+Prerequisites:
+
+1. MySQL Database installed and running.
+
+
+2. Java Development Kit (JDK) installed.
+
+
+3. MySQL JDBC Connector (Add the connector JAR to your project).
+
+
+
+Step 1: Create the MySQL Database Table
+
+Create a table that stores the file name, content, and extension. The content column will use the LONGBLOB type to hold binary file data.
+
+CREATE DATABASE file_storage;
+
+USE file_storage;
+
+CREATE TABLE files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    file_content LONGBLOB NOT NULL,
+    file_extension VARCHAR(10) NOT NULL
+);
+
+
+---
+
+Step 2: Java Code to Connect and Insert Files
+
+1. Add MySQL Connector Library
+
+Make sure the MySQL JDBC connector (e.g., mysql-connector-java-8.x.x.jar) is added to your project classpath.
+
+
+---
+
+2. Java Code Example
+
+import java.io.*;
+import java.sql.*;
+
+public class FileStorage {
+    private static final String URL = "jdbc:mysql://localhost:3306/file_storage";
+    private static final String USER = "root";
+    private static final String PASSWORD = "your_password";
+
+    public static void main(String[] args) {
+        // File to be stored in the database
+        File file = new File("path/to/your/file.txt");
+
+        try {
+            storeFile(file);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Method to store a file in the database
+    public static void storeFile(File file) throws SQLException, IOException {
+        String query = "INSERT INTO files (file_name, file_content, file_extension) VALUES (?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query);
+             FileInputStream fis = new FileInputStream(file)) {
+
+            // Set metadata and file content
+            pstmt.setString(1, file.getName());
+            pstmt.setBinaryStream(2, fis, (int) file.length());
+            pstmt.setString(3, getFileExtension(file));
+
+            // Execute the insert operation
+            int rowsAffected = pstmt.executeUpdate();
+            System.out.println(rowsAffected + " file(s) inserted.");
+        }
+    }
+
+    // Helper method to extract the file extension
+    public static String getFileExtension(File file) {
+        String fileName = file.getName();
+        int lastDot = fileName.lastIndexOf('.');
+        return (lastDot == -1) ? "" : fileName.substring(lastDot + 1);
+    }
+}
+
+
+---
+
+Step 3: Retrieve and Save Files from Database
+
+Here’s a method to retrieve and save files back to the file system.
+
+public static void retrieveFile(int fileId, String outputPath) throws SQLException, IOException {
+    String query = "SELECT file_name, file_content, file_extension FROM files WHERE id = ?";
+
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+         PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+        pstmt.setInt(1, fileId);
+        try (ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                String fileName = rs.getString("file_name");
+                InputStream input = rs.getBinaryStream("file_content");
+
+                File outputFile = new File(outputPath + fileName);
+                try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = input.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                    }
+                    System.out.println("File retrieved and saved: " + outputFile.getAbsolutePath());
+                }
+            } else {
+                System.out.println("No file found with ID: " + fileId);
+            }
+        }
+    }
+}
+
+
+---
+
+Step 4: Test the Code
+
+1. Run the storeFile method to insert a file into the database.
+
+
+2. Use the retrieveFile method to extract the file and save it locally.
+
+
+
+
+---
+
+Explanation:
+
+1. Database Table:
+The files table stores each file's metadata (name, content, extension).
+
+
+2. Storing Files:
+
+Use FileInputStream to read the file as binary data.
+
+Use PreparedStatement to insert the file data and metadata into the table.
+
+
+
+3. Retrieving Files:
+
+Query the file by its ID and use FileOutputStream to write it back to the file system.
+
+
+
+
+
+---
+
+This approach allows you to store, retrieve, and manage files efficiently in a MySQL database using Java.
+
+
+
+
+
+
+
