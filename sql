@@ -1,3 +1,117 @@
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.Scanner;
+
+public class FileInserter {
+
+    // Database credentials
+    private static final String URL = "jdbc:mysql://localhost:3306/your_database";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        System.out.print("Enter the path of the file to insert: ");
+        String filePath = scanner.nextLine(); // User input for file path
+
+        try {
+            insertFileIntoDatabase(filePath);
+        } catch (IOException | SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+        
+        scanner.close();
+    }
+
+    // Method to insert a file into the database
+    public static void insertFileIntoDatabase(String filePath) throws IOException, SQLException {
+        File file = new File(filePath);
+        String fileName = file.getName();
+        String content = readFileContent(filePath);
+        
+        // Insert file details into the database
+        String sql = "INSERT INTO files (fileName, filePath, fileContent) VALUES (?, ?, ?)";
+        
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, fileName);
+            pstmt.setString(2, filePath);
+            pstmt.setString(3, content);
+            pstmt.executeUpdate();
+            System.out.println("Inserted file: " + fileName);
+        }
+    }
+
+    // Method to read the file content based on file type
+    private static String readFileContent(String filePath) throws IOException {
+        // Check the file extension to determine how to read it
+        String fileExtension = getFileExtension(filePath);
+        
+        switch (fileExtension.toLowerCase()) {
+            case "txt":
+            case "xml":
+                // For text and XML files, read them as plain text
+                return new String(Files.readAllBytes(Paths.get(filePath)));
+            case "docx":
+                // For DOCX files, read as plain text (limitations apply)
+                return readDocxFile(filePath);
+            case "pdf":
+                // For PDF files, read as byte stream and convert to string (limitations apply)
+                return readPdfFile(filePath);
+            default:
+                throw new UnsupportedOperationException("Unsupported file type: " + fileExtension);
+        }
+    }
+
+    // Method to read DOCX files as plain text (limited functionality)
+    private static String readDocxFile(String filePath) throws IOException {
+        // Treating DOCX as a text file, this will not give structured content
+        return new String(Files.readAllBytes(Paths.get(filePath)));
+    }
+
+    // Method to read PDF files as a byte stream and convert to string
+    private static String readPdfFile(String filePath) throws IOException {
+        StringBuilder pdfText = new StringBuilder();
+        // Read PDF file as bytes
+        try (InputStream inputStream = new FileInputStream(filePath);
+             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+             
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                byteArrayOutputStream.write(buffer, 0, bytesRead);
+            }
+            
+            // Convert byte array to string (this will not yield structured text)
+            byte[] pdfBytes = byteArrayOutputStream.toByteArray();
+            return new String(pdfBytes); // Not recommended, just for demonstration
+        }
+    }
+
+    // Helper method to get the file extension
+    private static String getFileExtension(String filePath) {
+        int lastIndexOfDot = filePath.lastIndexOf('.');
+        if (lastIndexOfDot > 0 && lastIndexOfDot < filePath.length() - 1) {
+            return filePath.substring(lastIndexOfDot + 1);
+        }
+        return "";
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
