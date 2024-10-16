@@ -101,3 +101,69 @@ public class InsertFileToBlob {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class FileUploader {
+    // Database connection parameters
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/your_database_name"; // Change to your database
+    private static final String USER = "your_username"; // Change to your username
+    private static final String PASSWORD = "your_password"; // Change to your password
+
+    public static void main(String[] args) {
+        String filePath = "path/to/your/example.txt"; // Change to the path of your file
+        String fileName = "example.txt"; // Name of the file to be saved in the database
+
+        try {
+            // Upload file to database
+            uploadFile(filePath, fileName);
+            System.out.println("File uploaded successfully!");
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void uploadFile(String filePath, String fileName) throws SQLException, IOException {
+        // Establish a database connection
+        try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            // Prepare SQL statement for inserting the file
+            String sql = "INSERT INTO files (filename, file_path, file_data) VALUES (?, ?, ?)";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                // Set the filename and file path
+                preparedStatement.setString(1, fileName);
+                preparedStatement.setString(2, filePath);
+
+                // Read file data as bytes
+                File file = new File(filePath);
+                byte[] fileData = new byte[(int) file.length()];
+
+                try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                    fileInputStream.read(fileData);
+                }
+
+                // Set the file data as a BLOB
+                preparedStatement.setBytes(3, fileData);
+
+                // Execute the insert statement
+                preparedStatement.executeUpdate();
+            }
+        }
+    }
+}
