@@ -1,0 +1,129 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.*;
+
+public class FileManager {
+
+    // Database credentials
+    private static final String URL = "jdbc:mysql://localhost:3306/your_database";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    public static void main(String[] args) {
+        // Example search and masking operations
+        String searchWord = "example"; // User input for searching
+        List<FileRecord> foundFiles = searchFiles(searchWord);
+        foundFiles.forEach(fileRecord -> {
+            System.out.println("File: " + fileRecord.fileName + ", Count: " + fileRecord.count);
+        });
+
+        // Example of masking
+        List<String> selectedFiles = Arrays.asList("file1.txt", "file2.txt"); // User input for selected files
+        String maskedWord = "masked"; // User input for masking
+        maskWordInFiles(selectedFiles, searchWord, maskedWord);
+    }
+
+    // Search for files containing the specified word
+    public static List<FileRecord> searchFiles(String searchWord) {
+        List<FileRecord> foundFiles = new ArrayList<>();
+
+        String sql = "SELECT fileName, filePath, fileContent FROM files";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                String fileName = rs.getString("fileName");
+                String filePath = rs.getString("filePath");
+                byte[] fileContentBytes = rs.getBytes("fileContent");
+                String fileContent = new String(fileContentBytes);
+
+                // Count occurrences of the search word
+                int count = countOccurrences(fileContent, searchWord);
+                if (count > 0) {
+                    foundFiles.add(new FileRecord(fileName, filePath, count));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.getMessage());
+        }
+        return foundFiles;
+    }
+
+    // Count occurrences of a word in a given text
+    public static int countOccurrences(String text, String word) {
+        String[] words = text.split("\\W+");
+        return (int) Arrays.stream(words).filter(w -> w.equalsIgnoreCase(word)).count();
+    }
+
+    // Mask a word in selected files and update in both database and local disk
+    public static void maskWordInFiles(List<String> selectedFileNames, String searchWord, String maskedWord) {
+        String sql = "SELECT fileName, filePath, fileContent FROM files WHERE fileName IN (?)";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            // Create a comma-separated string of file names
+            String fileNames = String.join(",", selectedFileNames);
+            pstmt.setString(1, fileNames);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String fileName = rs.getString("fileName");
+                    String filePath = rs.getString("filePath");
+                    byte[] fileContentBytes = rs.getBytes("fileContent");
+                    String fileContent = new String(fileContentBytes);
+
+                    // Replace searchWord with maskedWord
+                    String updatedContent = fileContent.replaceAll("(?i)" + searchWord, maskedWord);
+
+                    // Update database
+                    updateDatabase(connection, fileName, updatedContent);
+
+                    // Update local file
+                    updateLocalFile(filePath, updatedContent);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.getMessage());
+        }
+    }
+
+    // Update the database with the new file content
+    private static void updateDatabase(Connection connection, String fileName, String updatedContent) {
+        String sql = "UPDATE files SET fileContent = ? WHERE fileName = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setBlob(1, new SerialBlob(updatedContent.getBytes()));
+            pstmt.setString(2, fileName);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("SQL Update Exception: " + e.getMessage());
+        }
+    }
+
+    // Update the local file with the new content
+    private static void updateLocalFile(String filePath, String updatedContent) {
+        try (FileOutputStream fos = new FileOutputStream(new File(filePath))) {
+            fos.write(updatedContent.getBytes());
+        } catch (IOException e) {
+            System.err.println("IO Exception: " + e.getMessage());
+        }
+    }
+
+    // Helper class to hold file information
+    static class FileRecord {
+        String fileName;
+        String filePath;
+        int count;
+
+        FileRecord(String fileName, String filePath, int count) {
+            this.fileName = fileName;
+            this.filePath = filePath;
+            this.count = count;
+        }
+    }
+}
