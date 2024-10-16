@@ -2,6 +2,69 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
+
+public class FileInserter {
+
+    // Database credentials
+    private static final String URL = "jdbc:mysql://localhost:3306/your_database"; // Update with your DB name
+    private static final String USER = "your_username"; // Update with your DB username
+    private static final String PASSWORD = "your_password"; // Update with your DB password
+
+    public static void main(String[] args) {
+        // Specify the path of the files to insert
+        String directoryPath = "path/to/your/files"; // Change to your directory containing HTML, XML, and TXT files
+
+        File directory = new File(directoryPath);
+        File[] files = directory.listFiles((dir, name) -> name.toLowerCase().endsWith(".html")
+                || name.toLowerCase().endsWith(".xml")
+                || name.toLowerCase().endsWith(".txt"));
+
+        if (files != null) {
+            for (File file : files) {
+                try {
+                    insertFileIntoDatabase(file);
+                    System.out.println("Inserted file: " + file.getName());
+                } catch (IOException | SQLException e) {
+                    System.err.println("Error inserting file: " + file.getName() + " - " + e.getMessage());
+                }
+            }
+        } else {
+            System.out.println("No files found in the directory.");
+        }
+    }
+
+    // Insert file content into the database
+    private static void insertFileIntoDatabase(File file) throws IOException, SQLException {
+        String fileName = file.getName();
+        String filePath = file.getAbsolutePath();
+        String fileContent = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+
+        String sql = "INSERT INTO files (fileName, filePath, fileContent) VALUES (?, ?, ?)";
+
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, fileName);
+            pstmt.setString(2, filePath);
+            pstmt.setString(3, fileContent);
+            pstmt.executeUpdate();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
 import java.util.Scanner;
 
 public class FileInserter {
