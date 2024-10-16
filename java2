@@ -1,3 +1,215 @@
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+
+import java.io.*;
+import java.sql.*;
+import java.util.*;
+
+public class FileManager {
+
+    // Database credentials
+    private static final String URL = "jdbc:mysql://localhost:3306/your_database";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        System.out.print("Enter the word to search: ");
+        String searchWord = scanner.nextLine(); // User input for search word
+        
+        List<FileResult> results = searchFilesForWord(searchWord);
+        
+        // Check if any files were found
+        if (results.isEmpty()) {
+            System.out.println("No files found containing the word: " + searchWord);
+            return;
+        }
+
+        // Display search results
+        System.out.println("Files containing the word '" + searchWord + "':");
+        for (int i = 0; i < results.size(); i++) {
+            System.out.println((i + 1) + ". File: " + results.get(i).fileName + ", Count: " + results.get(i).count);
+        }
+
+        System.out.print("Enter the file numbers to mask (comma-separated, e.g., 1,2): ");
+        String input = scanner.nextLine(); // User input for selected files
+        List<Integer> selectedIndices = parseInputToIndices(input, results.size());
+
+        System.out.print("Enter the word to be masked: ");
+        String maskedWord = scanner.nextLine(); // User input for masked word
+
+        // Mask the word in selected files
+        for (int index : selectedIndices) {
+            String fileName = results.get(index).fileName;
+            maskWordInFile(fileName, searchWord, maskedWord);
+        }
+        
+        System.out.println("Masking completed.");
+        scanner.close();
+    }
+
+    // Search for a word in all files
+    public static List<FileResult> searchFilesForWord(String searchWord) {
+        List<FileResult> results = new ArrayList<>();
+
+        String sql = "SELECT fileName, filePath, fileContent FROM files";
+        
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+             
+            while (rs.next()) {
+                String fileName = rs.getString("fileName");
+                String filePath = rs.getString("filePath");
+                Blob blob = rs.getBlob("fileContent");
+                
+                int count = 0;
+                String fileContent = readBlobToString(blob);
+                if (fileContent != null) {
+                    count = countWord(fileContent, searchWord);
+                }
+
+                if (count > 0) {
+                    results.add(new FileResult(fileName, count, filePath));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+
+        return results;
+    }
+
+    // Count occurrences of a word in a String
+    private static int countWord(String content, String word) {
+        String[] words = content.split("\\W+"); // Split by non-word characters
+        int count = 0;
+        for (String w : words) {
+            if (w.equalsIgnoreCase(word)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Mask a word in selected files
+    public static void maskWordInFile(String fileName, String searchWord, String maskedWord) {
+        String sql = "SELECT filePath, fileContent FROM files WHERE fileName = ?";
+        
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, fileName);
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                String filePath = rs.getString("filePath");
+                Blob blob = rs.getBlob("fileContent");
+
+                // Read file content into a String
+                String fileContent = readBlobToString(blob);
+                
+                // Mask the content based on file type
+                String updatedContent = fileContent.replace(searchWord, maskedWord);
+                
+                // Update the database with the new content
+                updateFileContentInDatabase(fileName, updatedContent);
+                
+                // Write the updated content back to the file on disk
+                writeToFile(filePath, updatedContent);
+                
+                System.out.println("Masked word in file: " + fileName);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+
+    // Read Blob content to String
+    private static String readBlobToString(Blob blob) {
+        StringBuilder sb = new StringBuilder();
+        try (InputStream inputStream = blob.getBinaryStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+             
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append(System.lineSeparator());
+            }
+        } catch (IOException | SQLException e) {
+            System.err.println("Error reading blob: " + e.getMessage());
+        }
+        return sb.toString();
+    }
+
+    // Update file content in the database
+    private static void updateFileContentInDatabase(String fileName, String newContent) {
+        String sql = "UPDATE files SET fileContent = ? WHERE fileName = ?";
+        
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setBlob(1, new ByteArrayInputStream(newContent.getBytes()));
+            pstmt.setString(2, fileName);
+            pstmt.executeUpdate();
+            System.out.println("Updated file content in database for: " + fileName);
+        } catch (SQLException e) {
+            System.err.println("Error updating database: " + e.getMessage());
+        }
+    }
+
+    // Write content to file on disk
+    private static void writeToFile(String filePath, String content) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write(content);
+        }
+    }
+
+    // Helper method to parse user input into file indices
+    private static List<Integer> parseInputToIndices(String input, int maxIndex) {
+        List<Integer> indices = new ArrayList<>();
+        String[] parts = input.split(",");
+        for (String part : parts) {
+            try {
+                int index = Integer.parseInt(part.trim()) - 1; // Convert to zero-based index
+                if (index >= 0 && index < maxIndex) {
+                    indices.add(index);
+                } else {
+                    System.out.println("Invalid index: " + (index + 1));
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input: " + part);
+            }
+        }
+        return indices;
+    }
+
+    // Helper class to store file results
+    static class FileResult {
+        String fileName;
+        int count;
+        String filePath;
+
+        public FileResult(String fileName, int count, String filePath) {
+            this.fileName = fileName;
+            this.count = count;
+            this.filePath = filePath;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 import java.io.*;
 import java.sql.*;
 import java.util.*;
