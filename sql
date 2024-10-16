@@ -1,6 +1,59 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class FileUploader {
+
+    // Database credentials
+    private static final String URL = "jdbc:mysql://localhost:3306/your_database";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    public static void main(String[] args) {
+        String filePath = "path/to/your/file.txt"; // Change this to your file's path
+        uploadFile(filePath);
+    }
+
+    public static void uploadFile(String filePath) {
+        File file = new File(filePath);
+
+        try (FileInputStream fis = new FileInputStream(file);
+             Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
+            
+            String sql = "INSERT INTO files (file_name, file_path, file_content) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, file.getName());
+                pstmt.setString(2, file.getAbsolutePath());
+                pstmt.setBlob(3, fis); // Using setBlob to insert file content
+                
+                int rowsAffected = pstmt.executeUpdate();
+                System.out.println("File uploaded successfully! Rows affected: " + rowsAffected);
+            }
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("IO Exception: " + e.getMessage());
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.*;
 
 public class FileHandler {
