@@ -1,3 +1,91 @@
+To add Maven dependencies for your Java project, you need to have a pom.xml file in the root directory of your project. This file manages your project’s dependencies, plugins, and other configurations.
+
+Steps to Add Maven Dependencies
+
+1. Locate or Create pom.xml:
+
+If your project is already set up as a Maven project, you should find a pom.xml file in the root directory.
+
+If it’s not a Maven project yet, you can create a new Maven project or convert your existing project to Maven by creating a pom.xml file.
+
+
+
+2. Add Dependencies:
+
+Open the pom.xml file in a text editor or an IDE (like IntelliJ IDEA, Eclipse, etc.).
+
+Within the <dependencies> tag, add the dependencies for Apache POI and PDFBox.
+
+
+
+
+Here’s how your pom.xml file might look with the necessary dependencies:
+
+Sample pom.xml
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>file-manager</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <!-- Apache POI for DOCX -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.2</version>
+        </dependency>
+        <!-- Apache PDFBox for PDF -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>2.0.26</version>
+        </dependency>
+        <!-- Add other dependencies here if needed -->
+    </dependencies>
+</project>
+
+How to Save Changes
+
+IDE: If you are using an IDE like IntelliJ IDEA or Eclipse, after adding the dependencies, the IDE will usually prompt you to download the new dependencies. You can also right-click on the pom.xml file and select options like "Reload Project" or "Maven > Update Project".
+
+Command Line: If you are using the command line, navigate to your project directory and run:
+
+mvn clean install
+
+This will download the dependencies specified in your pom.xml.
+
+
+Verifying Dependencies
+
+To check if the dependencies were added successfully:
+
+IDE: Look for a "Maven" or "Dependencies" section in your project structure, where the added libraries should be listed.
+
+Command Line: You can also check by running:
+
+mvn dependency:tree
+
+This command will show you all the dependencies of your project and their versions.
+
+
+Conclusion
+
+Once you've added the dependencies and built your project, you can use the libraries in your Java code as demonstrated in the previous examples. If you encounter any issues, ensure that you are connected to the internet so that Maven can download the necessary libraries.
+
+
+
+
+
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.pdfbox.pdmodel.PDDocument;
