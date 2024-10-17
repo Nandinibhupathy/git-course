@@ -1,3 +1,52 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class FileDatabase {
+
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/yourDatabase";
+    private static final String DB_USER = "yourUsername";
+    private static final String DB_PASSWORD = "yourPassword";
+
+    public static void main(String[] args) {
+        String fileName = "example.txt"; // Replace with the desired file name
+        int fileId = getFileIdByName(fileName);
+
+        if (fileId != -1) {
+            System.out.println("File ID for '" + fileName + "' is: " + fileId);
+        } else {
+            System.out.println("File not found.");
+        }
+    }
+
+    public static int getFileIdByName(String fileName) {
+        String query = "SELECT id FROM files WHERE fileName = ?";
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, fileName);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getInt("id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1; // Return -1 if the file is not found
+    }
+}
+
+
+
+
+
+
+
+
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
