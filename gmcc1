@@ -1,0 +1,71 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load the CSV file
+file_path = "path_to_your_file.csv"  # Replace with your file path
+data = pd.read_csv(file_path)
+
+# Ensure column names are consistent
+data.columns = ['px_value', 'b_s', 'qty_unit', 'trans_time']
+
+# Convert transaction time to datetime format
+data['trans_time'] = pd.to_datetime(data['trans_time'], format='%m/%d/%Y %H:%M')
+
+# Separate buy and sell data for analysis
+buy_data = data[data['b_s'].str.upper() == 'B']
+sell_data = data[data['b_s'].str.upper() == 'S']
+
+# 1. Weighted Average Price Analysis
+def calculate_weighted_avg(data, label):
+    weighted_avg = (data['px_value'] * data['qty_unit']).sum() / data['qty_unit'].sum()
+    print(f"{label} Weighted Average Price: {weighted_avg:.2f}")
+    return weighted_avg
+
+buy_avg = calculate_weighted_avg(buy_data, "Buying")
+sell_avg = calculate_weighted_avg(sell_data, "Selling")
+
+# 2. Correlation Analysis
+correlation = data[['px_value', 'qty_unit']].corr().iloc[0, 1]
+print(f"Correlation between price and quantity: {correlation:.2f}")
+
+# 3. Profit and Loss (P&L) Analysis
+# Merge buy and sell transactions on a time basis for simplicity
+merged_data = pd.concat([buy_data, sell_data], keys=['buy', 'sell']).reset_index(level=0)
+merged_data['P_L'] = np.where(merged_data['level_0'] == 'sell',
+                              (merged_data['px_value'] - sell_avg) * merged_data['qty_unit'], 0)
+merged_data['Cumulative_P_L'] = merged_data['P_L'].cumsum()
+
+print("Cumulative P&L Analysis:")
+print(merged_data[['trans_time', 'P_L', 'Cumulative_P_L']].tail())
+
+# Plotting the Cumulative P&L Trend
+plt.figure(figsize=(10, 6))
+plt.plot(merged_data['trans_time'], merged_data['Cumulative_P_L'], label="Cumulative P&L")
+plt.xlabel("Transaction Time")
+plt.ylabel("Cumulative P&L")
+plt.title("Cumulative Profit & Loss Over Time")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Additional Insights (Optional)
+# Volume trend analysis
+data['date'] = data['trans_time'].dt.date
+daily_volume = data.groupby(['date', 'b_s'])['qty_unit'].sum().unstack()
+daily_volume.plot(kind='bar', stacked=True, figsize=(12, 6))
+plt.title("Daily Buy/Sell Volumes")
+plt.xlabel("Date")
+plt.ylabel("Quantity")
+plt.grid(True)
+plt.show()
+
+# Timing insights
+data['hour'] = data['trans_time'].dt.hour
+hourly_volume = data.groupby(['hour', 'b_s'])['qty_unit'].sum().unstack()
+hourly_volume.plot(kind='line', figsize=(12, 6))
+plt.title("Hourly Buy/Sell Trends")
+plt.xlabel("Hour of Day")
+plt.ylabel("Quantity")
+plt.grid(True)
+plt.show()
