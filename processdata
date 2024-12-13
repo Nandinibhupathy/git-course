@@ -1,0 +1,45 @@
+import pandas as pd
+
+# Load the data
+data = pd.read_csv("your_stock_data.csv", parse_dates=["transaction_time"])
+
+# Ensure data is sorted by transaction time
+data.sort_values(by="transaction_time", inplace=True)
+
+# Set transaction_time as the index
+data.set_index("transaction_time", inplace=True)
+
+# Resample data to a desired time frame (e.g., 1 hour)
+resampled = data.resample("1H").agg({
+    "price": ["max", "min", "first", "last"],  # High, Low, Open, Close
+    "quantity": "sum"  # Volume
+})
+
+# Rename columns
+resampled.columns = ["high", "low", "open", "close", "volume"]
+
+# Calculate quoteVolume and weightedAverage
+resampled["quoteVolume"] = data.resample("1H").apply(lambda x: (x["price"] * x["quantity"]).sum())
+resampled["weightedAverage"] = resampled["quoteVolume"] / resampled["volume"]
+
+# Add scaled columns using Min-Max Scaling
+resampled["vh"] = (resampled["high"] - resampled["high"].min()) / (resampled["high"].max() - resampled["high"].min())
+resampled["vl"] = (resampled["low"] - resampled["low"].min()) / (resampled["low"].max() - resampled["low"].min())
+resampled["vc"] = (resampled["close"] - resampled["close"].min()) / (resampled["close"].max() - resampled["close"].min())
+resampled["open_s"] = (resampled["open"] - resampled["open"].min()) / (resampled["open"].max() - resampled["open"].min())
+resampled["volume_s"] = (resampled["volume"] - resampled["volume"].min()) / (resampled["volume"].max() - resampled["volume"].min())
+resampled["quoteVolume_s"] = (resampled["quoteVolume"] - resampled["quoteVolume"].min()) / (resampled["quoteVolume"].max() - resampled["quoteVolume"].min())
+resampled["weightedAverage_s"] = (resampled["weightedAverage"] - resampled["weightedAverage"].min()) / (resampled["weightedAverage"].max() - resampled["weightedAverage"].min())
+
+# Add rolling averages for scaled columns over 7, 14, and 30 periods
+for col in ["vh", "vl", "vc", "open_s", "volume_s", "quoteVolume_s", "weightedAverage_s"]:
+    for window in [7, 14, 30]:
+        resampled[f"{col}_roll_{window}"] = resampled[col].rolling(window).mean()
+
+# Reset index to make transaction_time a column
+resampled.reset_index(inplace=True)
+
+# Save the transformed dataset
+resampled.to_csv("transformed_stock_data.csv", index=False)
+
+print("Transformation complete. Data saved to 'transformed_stock_data.csv'")
