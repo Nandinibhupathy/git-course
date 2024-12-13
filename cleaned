@@ -48,22 +48,35 @@ print(result)
 
 
 
-
-# Get the last transaction time
+# Get the first and last transaction times
+first_time = df['transaction_time'].min()
 last_time = df['transaction_time'].max()
 
-# Calculate the next hour after the last transaction time
-upper_limit = (last_time + pd.Timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+# Calculate the upper limit (next hour after the last transaction time)
+next_hour_start = last_time.replace(minute=0, second=0, microsecond=0) + pd.Timedelta(hours=1)
 
-# Create the time intervals (5 minutes intervals from the start to the upper limit)
-time_intervals = pd.date_range(start=last_time.replace(minute=0, second=0, microsecond=0),
-                               end=upper_limit,
-                               freq='5T')
+# Generate time intervals from the first transaction time to the next hour with a 5-minute interval
+time_intervals = pd.date_range(start=first_time.replace(second=0, microsecond=0), end=next_hour_start, freq='5T')
 
-# Assign each transaction to the corresponding time interval
-df['formatted_time'] = pd.cut(df['transaction_time'], bins=time_intervals, right=False, labels=time_intervals[:-1])
+# Assign each transaction time to the corresponding interval
+df['time_interval'] = pd.cut(df['transaction_time'], bins=time_intervals, right=False, labels=time_intervals[1:])
 
-# Ensure the time interval format is correct (including timezone information if necessary)
-df['formatted_time'] = df['formatted_time'].dt.strftime('%Y-%m-%d %H:%M:%S') + '-07:00'
+# Format the time intervals to include the upper limit
+df['formatted_time'] = df['time_interval'].apply(
+    lambda x: f"{x.strftime('%Y-%m-%d %H:%M:%S')}-{next_hour_start.strftime('%H:%M:%S')}"
+)
 
-# Continue with the aggregation and calculation steps...
+# Calculate open, high, low, close, volume, and quoteVolume
+result = df.groupby('formatted_time').agg(
+    open=('price', 'first'),
+    high=('price', 'max'),
+    low=('price', 'min'),
+    close=('price', 'last'),
+    volume=('quantity', 'sum'),
+    quoteVolume=('quantity', 'sum'),  # You can modify quoteVolume calculation if needed
+    weightedAverage=('price', lambda x: (x * df.loc[x.index, 'quantity']).sum() / x.sum())
+).reset_index()
+
+# Print the result
+print(result)
+
