@@ -1,3 +1,31 @@
+date	coin	high	low	open	close	volume	quoteVolume	weightedAverage
+2015-06-30 13:00:00-07:00	DASH	0.01116503	0.01116503	0.01116503	0.01116503	0	0	0.01116503
+2015-06-30 13:00:00-07:00	LTC	0.01516993	0.0151698	0.01516991	0.0151698	0.12816842	8.44890689	0.01516982
+2015-06-30 13:00:00-07:00	STR	1.30E-05	1.30E-05	1.30E-05	1.30E-05	0.06351625	4882.109915	1.30E-05
+2015-06-30 13:05:00-07:00	DASH	0.01111503	0.01110387	0.01111503	0.01110387	0.13490498	12.1390657	0.01111329
+I have the data of a stock with the prices and quantity at which they are sold or bought at diferent times. it has columns like price, quantity, bought/sold, transaction time in mm/dd/yyyy hr:min format.
+can this data be converted exactly like the above previous data. i want values for all columns. give pyhton code
+for the time interval 
+it must take the hour next to the latest time in the entire data as upper limit. give changes alone.
+the upper limit must be the same for entire dataset. 
+difference between each lower limit must be 5 minutes
+give changes alone. 
+eg:
+if the first transaction time is 10:13 and
+if the last transaction_time is 17:22
+the intervals must be like :
+
+10.00-18:00
+10:05-18:00
+10.10-18:00
+.....
+17:55-18:00
+
+
+
+
+++++++++++++++++++
+
 import pandas as pd
 
 # Sample data (replace with your actual stock data)
