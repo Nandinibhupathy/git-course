@@ -1,0 +1,64 @@
+import pandas as pd
+import numpy as np
+
+# Sample data: Assuming you have the following columns
+# 'price', 'quantity', 'bought/sold', 'transaction_time'
+# Example data
+data = {
+    'price': [100, 105, 110, 108, 102, 107],
+    'quantity': [10, 15, 10, 20, 25, 10],
+    'bought/sold': ['bought', 'sold', 'bought', 'sold', 'bought', 'sold'],
+    'transaction_time': ['12/13/2024 09:00', '12/13/2024 09:05', '12/13/2024 09:10', 
+                         '12/13/2024 09:15', '12/13/2024 09:20', '12/13/2024 09:25']
+}
+
+# Convert the data into a DataFrame
+df = pd.DataFrame(data)
+
+# Convert the 'transaction_time' column to datetime format
+df['transaction_time'] = pd.to_datetime(df['transaction_time'], format='%m/%d/%Y %H:%M')
+
+# Set the transaction time as the index
+df.set_index('transaction_time', inplace=True)
+
+# Calculate the Open, High, Low, Close for each resampled period (e.g., 5 minutes)
+resampled = df.resample('5T').agg(
+    open=('price', 'first'),
+    high=('price', 'max'),
+    low=('price', 'min'),
+    close=('price', 'last'),
+    volume=('quantity', 'sum'),
+    quoteVolume=('quantity', 'sum')  # Assuming quote volume is the same as quantity for simplicity
+)
+
+# Calculate weighted average (you may need a formula depending on your definition)
+resampled['weightedAverage'] = resampled['volume'] * resampled['close']
+resampled['weightedAverage'] = resampled['weightedAverage'] / resampled['volume']
+
+# Calculate rolling averages (7, 14, 30 periods)
+resampled['vh_roll_7'] = resampled['high'].rolling(window=7).mean()
+resampled['vl_roll_7'] = resampled['low'].rolling(window=7).mean()
+resampled['vc_roll_7'] = resampled['close'].rolling(window=7).mean()
+resampled['volume_s_roll_7'] = resampled['volume'].rolling(window=7).mean()
+
+resampled['vh_roll_14'] = resampled['high'].rolling(window=14).mean()
+resampled['vl_roll_14'] = resampled['low'].rolling(window=14).mean()
+resampled['vc_roll_14'] = resampled['close'].rolling(window=14).mean()
+resampled['volume_s_roll_14'] = resampled['volume'].rolling(window=14).mean()
+
+resampled['vh_roll_30'] = resampled['high'].rolling(window=30).mean()
+resampled['vl_roll_30'] = resampled['low'].rolling(window=30).mean()
+resampled['vc_roll_30'] = resampled['close'].rolling(window=30).mean()
+resampled['volume_s_roll_30'] = resampled['volume'].rolling(window=30).mean()
+
+# For smoothed values (open_s, volume_s, quoteVolume_s, weightedAverage_s)
+resampled['open_s'] = resampled['open'].rolling(window=7).mean()
+resampled['volume_s'] = resampled['volume'].rolling(window=7).mean()
+resampled['quoteVolume_s'] = resampled['quoteVolume'].rolling(window=7).mean()
+resampled['weightedAverage_s'] = resampled['weightedAverage'].rolling(window=7).mean()
+
+# Final dataset
+final_data = resampled.dropna()  # Remove rows with NaN values due to rolling window
+
+# Display the final dataset
+print(final_data)
