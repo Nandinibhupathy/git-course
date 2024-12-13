@@ -44,7 +44,9 @@ result = df.groupby('formatted_time').agg(
     low=('price', 'min'),
     close=('price', 'last'),
     volume=('quantity', 'sum'),
-  
+    quoteVolume=('quantity', 'sum'),  # You can modify quoteVolume calculation if needed
+    weightedAverage=('price', lambda x: (x * df.loc[x.index, 'quantity']).sum() / x.sum())
+).reset_index()
 
 
 
