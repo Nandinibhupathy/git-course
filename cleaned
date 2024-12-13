@@ -44,3 +44,26 @@ result = df.groupby('formatted_time').agg(
 
 # Print the result
 print(result)
+
+
+
+
+
+# Get the last transaction time
+last_time = df['transaction_time'].max()
+
+# Calculate the next hour after the last transaction time
+upper_limit = (last_time + pd.Timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+
+# Create the time intervals (5 minutes intervals from the start to the upper limit)
+time_intervals = pd.date_range(start=last_time.replace(minute=0, second=0, microsecond=0),
+                               end=upper_limit,
+                               freq='5T')
+
+# Assign each transaction to the corresponding time interval
+df['formatted_time'] = pd.cut(df['transaction_time'], bins=time_intervals, right=False, labels=time_intervals[:-1])
+
+# Ensure the time interval format is correct (including timezone information if necessary)
+df['formatted_time'] = df['formatted_time'].dt.strftime('%Y-%m-%d %H:%M:%S') + '-07:00'
+
+# Continue with the aggregation and calculation steps...
