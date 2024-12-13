@@ -1,3 +1,73 @@
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+
+# Sample data: Replace this with your actual data
+data = {
+    'transaction_time': ['2015-06-30 13:00:00', '2015-06-30 13:05:00', '2015-06-30 13:10:00', '2015-06-30 13:15:00'],
+    'price': [0.01116503, 0.01111503, 0.01110388, 0.01111838],
+    'quantity': [0, 0.13490498, 0.06261864, 0.68543672],
+    'transaction_type': ['buy', 'buy', 'sell', 'buy']
+}
+
+# Convert the data into a pandas DataFrame
+df = pd.DataFrame(data)
+df['transaction_time'] = pd.to_datetime(df['transaction_time'])
+
+# Find the earliest and latest transaction times
+start_time = df['transaction_time'].min()
+end_time = df['transaction_time'].max()
+
+# Calculate the upper time limit (next hour after the latest time)
+upper_limit = end_time.replace(minute=0, second=0) + timedelta(hours=1)
+
+# Generate 5-minute intervals between the start time and the upper limit
+time_intervals = pd.date_range(start=start_time.replace(minute=0, second=0), end=upper_limit, freq='5T')
+
+# Initialize the final data structure to hold the transformed data
+transformed_data = []
+
+# Iterate over each time interval and fill the values
+for time in time_intervals:
+    interval_data = {
+        'date': time.strftime('%Y-%m-%d %H:%M:%S-07:00'),
+        'coin': 'DASH',  # Assuming the coin is always DASH
+        'high': np.nan,  # Placeholder for the high price (to be calculated)
+        'low': np.nan,  # Placeholder for the low price (to be calculated)
+        'open': np.nan,  # Placeholder for the open price (to be calculated)
+        'close': np.nan,  # Placeholder for the close price (to be calculated)
+        'volume': 0,  # Placeholder for volume (to be calculated)
+        'quoteVolume': 0,  # Placeholder for quoteVolume (to be calculated)
+        'weightedAverage': np.nan  # Placeholder for weightedAverage (to be calculated)
+    }
+    
+    # Filter the transactions that fall within this time interval
+    transactions_in_interval = df[(df['transaction_time'] >= time) & (df['transaction_time'] < time + timedelta(minutes=5))]
+    
+    if not transactions_in_interval.empty:
+        interval_data['open'] = transactions_in_interval.iloc[0]['price']
+        interval_data['close'] = transactions_in_interval.iloc[-1]['price']
+        interval_data['high'] = transactions_in_interval['price'].max()
+        interval_data['low'] = transactions_in_interval['price'].min()
+        interval_data['volume'] = transactions_in_interval['quantity'].sum()
+        interval_data['quoteVolume'] = transactions_in_interval['quantity'].sum()  # Adjust based on how quoteVolume is calculated
+        interval_data['weightedAverage'] = np.average(transactions_in_interval['price'], weights=transactions_in_interval['quantity'])
+    
+    transformed_data.append(interval_data)
+
+# Convert the list of transformed data into a DataFrame
+final_df = pd.DataFrame(transformed_data)
+
+# Show the final result
+print(final_df)
+
+
+
+
+
+
+===================
+
 date	coin	high	low	open	close	volume	quoteVolume	weightedAverage
 2015-06-30 13:00:00-07:00	DASH	0.01116503	0.01116503	0.01116503	0.01116503	0	0	0.01116503
 2015-06-30 13:05:00-07:00	DASH	0.01111503	0.01110387	0.01111503	0.01110387	0.13490498	12.1390657	0.01111329
