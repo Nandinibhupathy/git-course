@@ -1,0 +1,46 @@
+import pandas as pd
+
+# Sample data (replace with your actual stock data)
+data = [
+    {'transaction_time': '06/30/2015 13:00', 'price': 0.01116503, 'quantity': 100, 'action': 'buy'},
+    {'transaction_time': '06/30/2015 13:02', 'price': 0.01117000, 'quantity': 50, 'action': 'sell'},
+    {'transaction_time': '06/30/2015 13:04', 'price': 0.01116000, 'quantity': 75, 'action': 'buy'},
+    {'transaction_time': '06/30/2015 13:06', 'price': 0.01118000, 'quantity': 200, 'action': 'sell'},
+    # Add more rows as needed
+]
+
+# Convert to DataFrame
+df = pd.DataFrame(data)
+
+# Convert the transaction time to datetime
+df['transaction_time'] = pd.to_datetime(df['transaction_time'], format='%m/%d/%Y %H:%M')
+
+# Get the last hour of the transaction time
+last_time = df['transaction_time'].max()
+
+# Group by time intervals (e.g., every 5 minutes)
+# We need to ensure that the last interval ends exactly at the last transaction time
+df['time_interval'] = df['transaction_time'].dt.floor('5T')
+
+# Adjust the time intervals to ensure the last interval matches the last available transaction time
+# Get the start of the hour for the last transaction time
+last_hour_start = last_time.replace(minute=0, second=0, microsecond=0)
+
+# Create the time intervals, ensuring the last interval is within the last hour
+df['formatted_time'] = df['time_interval'].apply(
+    lambda x: last_hour_start if x == last_hour_start else x.strftime('%Y-%m-%d %H:%M:%S-07:00')
+)
+
+# Calculate open, high, low, close, volume, and quoteVolume
+result = df.groupby('formatted_time').agg(
+    open=('price', 'first'),
+    high=('price', 'max'),
+    low=('price', 'min'),
+    close=('price', 'last'),
+    volume=('quantity', 'sum'),
+    quoteVolume=('quantity', 'sum'),  # You can modify quoteVolume calculation if needed
+    weightedAverage=('price', lambda x: (x * df.loc[x.index, 'quantity']).sum() / x.sum())
+).reset_index()
+
+# Print the result
+print(result)
