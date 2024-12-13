@@ -2,6 +2,59 @@
 # Convert the transaction time to datetime
 df['transaction_time'] = pd.to_datetime(df['transaction_time'], format='%m/%d/%Y %H:%M')
 
+# Extract the date from the transaction time
+df['date'] = df['transaction_time'].dt.date
+
+# Initialize a list to hold formatted time intervals
+formatted_intervals = []
+
+# Process each day separately
+for date, group in df.groupby('date'):
+    # Get the first and last transaction times for the day
+    first_time = group['transaction_time'].min()
+    last_time = group['transaction_time'].max()
+
+    # Calculate the upper limit (next hour after the last transaction time)
+    next_hour_start = last_time.replace(minute=0, second=0, microsecond=0) + pd.Timedelta(hours=1)
+
+    # Calculate the lower limit of the last interval (5 minutes before the upper limit)
+    last_interval_lower_limit = next_hour_start - pd.Timedelta(minutes=5)
+
+    # Generate time intervals from the first transaction time to the lower limit of the last interval with a 5-minute interval
+    time_intervals = pd.date_range(start=first_time.replace(second=0, microsecond=0), 
+                                   end=last_interval_lower_limit, freq='5T')
+
+    # Create formatted intervals for the day
+    for interval_start in time_intervals:
+        formatted_intervals.append({
+            'date': date,
+            'formatted_time': f"{interval_start.strftime('%Y-%m-%d %H:%M:%S')}-{next_hour_start.strftime('%H:%M:%S')}"
+        })
+
+# Convert the list of intervals to a DataFrame
+intervals_df = pd.DataFrame(formatted_intervals)
+
+# Merge the original data with the generated intervals
+df = pd.merge(df, intervals_df, on='date', how='left')
+
+# Calculate open, high, low, close, volume, and quoteVolume
+result = df.groupby('formatted_time').agg(
+    open=('price', 'first'),
+    high=('price', 'max'),
+    low=('price', 'min'),
+    close=('price', 'last'),
+    volume=('quantity', 'sum'),
+  
+
+
+
+
+
+
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+# Convert the transaction time to datetime
+df['transaction_time'] = pd.to_datetime(df['transaction_time'], format='%m/%d/%Y %H:%M')
+
 # Get the first and last transaction times
 first_time = df['transaction_time'].min()
 last_time = df['transaction_time'].max()
