@@ -1,0 +1,111 @@
+import pandas as pd
+import numpy as np
+import gym
+from gym import spaces
+from stable_baselines3 import DQN
+import matplotlib.pyplot as plt
+
+# Load and preprocess data
+data = pd.read_csv("stock_data.csv")
+data['transaction_time'] = pd.to_datetime(data['transaction_time'])
+data.sort_values('transaction_time', inplace=True)  # Ensure data is sorted by time
+data.reset_index(drop=True, inplace=True)
+
+# Normalize price and quantity for better training performance
+data['price'] = (data['price'] - data['price'].mean()) / data['price'].std()
+data['quantity'] = (data['quantity'] - data['quantity'].mean()) / data['quantity'].std()
+
+# Define the Stock Trading Environment
+class StockTradingEnv(gym.Env):
+    def __init__(self, data):
+        super(StockTradingEnv, self).__init__()
+        self.data = data
+        self.current_step = 0
+        self.cash = 10000  # Initial cash balance
+        self.stock_held = 0
+        self.total_profit = 0
+        self.done = False
+
+        # Define action space: 0 = Hold, 1 = Sell
+        self.action_space = spaces.Discrete(2)
+
+        # Define observation space: [price, quantity, stock held, cash]
+        self.observation_space = spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+
+    def reset(self):
+        """Reset the environment to its initial state."""
+        self.current_step = 0
+        self.cash = 10000
+        self.stock_held = 0
+        self.total_profit = 0
+        self.done = False
+        return self._get_state()
+
+    def _get_state(self):
+        """Get the current state."""
+        current_data = self.data.iloc[self.current_step]
+        return np.array([current_data['price'], current_data['quantity'], self.stock_held, self.cash])
+
+    def step(self, action):
+        """Execute the action and return the next state, reward, and done flag."""
+        current_data = self.data.iloc[self.current_step]
+        price = current_data['price']
+        quantity = current_data['quantity']
+
+        if action == 1:  # Sell
+            if self.stock_held > 0:
+                sell_value = self.stock_held * price
+                self.cash += sell_value
+                reward = sell_value - (self.stock_held * price)  # Profit
+                self.total_profit += reward
+                self.stock_held = 0
+            else:
+                reward = -1  # Penalty for selling without stock
+        else:  # Hold
+            reward = -0.1  # Small penalty for holding (opportunity cost)
+
+        # Move to the next step
+        self.current_step += 1
+        self.done = self.current_step >= len(self.data) - 1
+
+        return self._get_state(), reward, self.done, {}
+
+    def render(self):
+        """Render the current state."""
+        print(f"Step: {self.current_step}, Cash: {self.cash}, Stock Held: {self.stock_held}, Total Profit: {self.total_profit}")
+
+# Split data into training and testing sets
+train_data = data[:int(len(data) * 0.8)]
+test_data = data[int(len(data) * 0.8):]
+
+# Create training environment
+train_env = StockTradingEnv(train_data)
+
+# Train the RL agent using DQN
+model = DQN("MlpPolicy", train_env, verbose=1, learning_rate=0.001, gamma=0.99)
+model.learn(total_timesteps=10000)
+
+# Test the agent
+test_env = StockTradingEnv(test_data)
+state = test_env.reset()
+done = False
+total_reward = 0
+profits = []  # Track profits over time
+
+while not done:
+    action, _ = model.predict(state)
+    state, reward, done, _ = test_env.step(action)
+    total_reward += reward
+    profits.append(test_env.total_profit)
+    test_env.render()
+
+print(f"Total Reward from Testing: {total_reward}")
+
+# Plot the results
+plt.plot(profits)
+plt.xlabel("Steps")
+plt.ylabel("Total Profit")
+plt.title("Total Profit Over Time")
+plt.show()
