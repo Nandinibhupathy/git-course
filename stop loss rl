@@ -1,0 +1,148 @@
+import numpy as np
+import pandas as pd
+import gym
+from gym import spaces
+import matplotlib.pyplot as plt
+from stable_baselines3 import DQN
+
+# -----------------------
+# 1. Custom Environment
+# -----------------------
+class StopLossEnv(gym.Env):
+    """
+    Custom Environment to train an RL agent to find the optimal stop-loss.
+    """
+    def __init__(self, data, initial_balance=10000):
+        super(StopLossEnv, self).__init__()
+        
+        # Stock data: DataFrame with price, quantity, buy/sell, and transaction time
+        self.data = data
+        self.initial_balance = initial_balance
+        
+        # Actions: Discrete stop-loss percentages (0% to 10%)
+        self.action_space = spaces.Discrete(11)  # 0%, 1%, 2%, ..., 10%
+        
+        # State: Current price, remaining balance, and current step
+        self.observation_space = spaces.Box(low=0, high=np.inf, shape=(4,), dtype=np.float32)
+        
+        self.reset()
+
+    def reset(self):
+        """Reset the environment to the initial state."""
+        self.balance = self.initial_balance
+        self.current_step = 0
+        self.done = False
+        self.stop_loss_percent = None
+        self.current_price = self.data.iloc[self.current_step]["price"]
+        
+        return self._get_observation()
+
+    def _get_observation(self):
+        """Return the current state observation."""
+        return np.array([
+            self.current_price,
+            self.balance,
+            self.stop_loss_percent if self.stop_loss_percent is not None else 0,
+            self.current_step
+        ], dtype=np.float32)
+
+    def step(self, action):
+        """
+        Perform one step in the environment.
+        :param action: Stop-loss percentage chosen by the agent
+        """
+        self.stop_loss_percent = action / 100  # Convert to percentage
+        self.current_price = self.data.iloc[self.current_step]["price"]
+        buy_price = self.current_price
+        
+        # Simulate price movement for the next step
+        next_step = self.current_step + 1
+        next_price = self.data.iloc[next_step]["price"] if next_step < len(self.data) else self.current_price
+        
+        # Calculate stop-loss price
+        stop_loss_price = buy_price * (1 - self.stop_loss_percent)
+        
+        # Reward calculation
+        if next_price <= stop_loss_price:  # Stop-loss hit
+            loss = buy_price - stop_loss_price
+            self.balance -= loss
+            reward = -loss  # Negative reward for hitting stop-loss
+            self.done = True
+        else:
+            reward = next_price - buy_price  # Reward based on price movement
+            self.balance += reward
+        
+        self.current_step += 1
+        if self.current_step >= len(self.data) - 1:
+            self.done = True
+        
+        return self._get_observation(), reward, self.done, {}
+
+    def render(self, mode="human"):
+        """Print the current step information."""
+        print(f"Step: {self.current_step}, Price: {self.current_price}, Stop-Loss: {self.stop_loss_percent * 100}%, Balance: {self.balance}")
+
+# -----------------------
+# 2. Data Loading Function
+# -----------------------
+def load_stock_data_from_csv(file_path):
+    """
+    Load stock data from a CSV file.
+    The CSV file must have columns: price, quantity, buy/sell, transaction_time.
+    """
+    try:
+        data = pd.read_csv(file_path, parse_dates=["transaction_time"])
+        print("Stock data loaded successfully.")
+        print(data.head())  # Print a sample to confirm
+        return data
+    except Exception as e:
+        print(f"Error loading CSV file: {e}")
+        exit(1)
+
+# -----------------------
+# 3. Training the RL Agent
+# -----------------------
+def train_agent(env):
+    """Train the RL agent using DQN."""
+    model = DQN("MlpPolicy", env, verbose=1, learning_rate=0.001, buffer_size=10000, exploration_final_eps=0.01)
+    model.learn(total_timesteps=5000)
+    return model
+
+# -----------------------
+# 4. Evaluate Optimal Stop-Loss
+# -----------------------
+def evaluate_stop_loss(env, model):
+    """Evaluate the optimal stop-loss learned by the agent."""
+    obs = env.reset()
+    done = False
+    stop_losses = []
+    
+    while not done:
+        action, _ = model.predict(obs, deterministic=True)
+        stop_losses.append(action / 100)
+        obs, reward, done, _ = env.step(action)
+        env.render()
+    
+    optimal_stop_loss = max(set(stop_losses), key=stop_losses.count)
+    print(f"\nOptimal Stop-Loss Percentage: {optimal_stop_loss * 100}%")
+
+# -----------------------
+# 5. Main Execution
+# -----------------------
+if __name__ == "__main__":
+    # Provide the path to your CSV file
+    file_path = "path_to_your_stock_data.csv"  # Replace with your file path
+    
+    # Load stock data from the CSV file
+    stock_data = load_stock_data_from_csv(file_path)
+    
+    # Initialize the environment
+    env = StopLossEnv(stock_data)
+    
+    # Train the agent
+    print("\nTraining the RL Agent...")
+    model = train_agent(env)
+    
+    # Evaluate the learned stop-loss
+    print("\nEvaluating the Optimal Stop-Loss...")
+    evaluate_stop_loss(env, model)
