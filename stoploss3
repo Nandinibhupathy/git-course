@@ -1,0 +1,111 @@
+import numpy as np
+import pandas as pd
+import gym
+from gym import spaces
+from stable_baselines3 import PPO
+import ta  # For technical indicators (pip install ta)
+import matplotlib.pyplot as plt
+
+# -----------------------
+# 1. Custom Environment
+# -----------------------
+class StopLossEnv(gym.Env):
+    def __init__(self, data, initial_balance=10000):
+        super(StopLossEnv, self).__init__()
+        self.data = data
+        self.initial_balance = initial_balance
+        
+        # Continuous Action Space: Stop-loss percentage [1%, 10%]
+        self.action_space = spaces.Box(low=0.01, high=0.10, shape=(1,), dtype=np.float32)
+        
+        # Observation Space: [Current Price, Balance, Normalized SMA, Normalized RSI]
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32)
+        
+        self.reset()
+
+    def reset(self):
+        self.balance = self.initial_balance
+        self.current_step = 0
+        self.done = False
+        self.stop_loss_percent = None
+        self.data["sma"] = ta.trend.sma_indicator(self.data["price"], window=5).fillna(0)
+        self.data["rsi"] = ta.momentum.RSIIndicator(self.data["price"]).rsi().fillna(0)
+        return self._get_observation()
+
+    def _get_observation(self):
+        price = self.data.iloc[self.current_step]["price"]
+        sma = self.data.iloc[self.current_step]["sma"]
+        rsi = self.data.iloc[self.current_step]["rsi"]
+        return np.array([price, self.balance, sma / price, rsi / 100], dtype=np.float32)
+
+    def step(self, action):
+        self.stop_loss_percent = float(action[0])
+        buy_price = self.data.iloc[self.current_step]["price"]
+        stop_loss_price = buy_price * (1 - self.stop_loss_percent)
+        
+        next_step = self.current_step + 1
+        if next_step < len(self.data):
+            next_price = self.data.iloc[next_step]["price"]
+        else:
+            next_price = buy_price
+
+        # Reward Calculation
+        if next_price <= stop_loss_price:  # Stop-loss hit
+            loss = buy_price - stop_loss_price
+            self.balance -= loss
+            reward = -loss - 10  # Penalty for hitting stop-loss
+        else:
+            reward = next_price - buy_price  # Positive reward for price increase
+            self.balance += reward
+
+        self.current_step += 1
+        self.done = self.current_step >= len(self.data) - 1
+        return self._get_observation(), reward, self.done, {}
+
+    def render(self, mode="human"):
+        print(f"Step: {self.current_step}, Balance: {self.balance:.2f}, Stop-Loss: {self.stop_loss_percent*100:.2f}%")
+
+# -----------------------
+# 2. Load Stock Data
+# -----------------------
+def load_stock_data(file_path):
+    data = pd.read_csv(file_path, parse_dates=["transaction_time"])
+    print("Stock Data Sample:")
+    print(data.head())
+    return data
+
+# -----------------------
+# 3. Train PPO Agent
+# -----------------------
+def train_agent(env, timesteps=50000):
+    model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.0003)
+    model.learn(total_timesteps=timesteps)
+    return model
+
+# -----------------------
+# 4. Evaluate Stop-Loss
+# -----------------------
+def evaluate_stop_loss(env, model):
+    obs = env.reset()
+    done = False
+    stop_losses = []
+    while not done:
+        action, _ = model.predict(obs, deterministic=True)
+        stop_losses.append(float(action[0]))
+        obs, reward, done, _ = env.step(action)
+        env.render()
+    print(f"\nAverage Stop-Loss Percentage: {np.mean(stop_losses) * 100:.2f}%")
+
+# -----------------------
+# 5. Main Execution
+# -----------------------
+if __name__ == "__main__":
+    file_path = "path_to_your_stock_data.csv"  # Replace with your CSV file path
+    stock_data = load_stock_data(file_path)
+    
+    env = StopLossEnv(stock_data)
+    print("\nTraining PPO Agent...")
+    model = train_agent(env, timesteps=50000)
+    
+    print("\nEvaluating Optimal Stop-Loss...")
+    evaluate_stop_loss(env, model)
