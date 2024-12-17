@@ -1,0 +1,21 @@
+import pandas as pd
+
+# Function to process stock data
+def process_stock_data(input_file, output_file):
+    # Read the Excel file
+    df = pd.read_excel(input_file)
+    
+    # Group by transaction_time and buy/sell, then aggregate
+    aggregated_df = df.groupby(['buy/sell', 'transaction_time'], as_index=False).agg({
+        'price': 'mean',    # Average price for the same time
+        'quantity': 'sum'   # Sum up the quantities
+    })
+    
+    # Save the processed data to a new Excel file
+    aggregated_df.to_excel(output_file, index=False)
+    print(f"Processed file saved as: {output_file}")
+
+# Example usage
+input_file = "input_stock_data.xlsx"   # Input Excel file path
+output_file = "output_stock_data.xlsx" # Output Excel file path
+process_stock_data(input_file, output_file)
