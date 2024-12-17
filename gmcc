@@ -1,0 +1,175 @@
+High-Level Problem Description
+
+The problem is to determine the optimal stop-loss percentage for a stock trading strategy. Stop-loss is a risk management tool that limits an investor's loss by automatically selling an asset when its price drops to a predefined level. The goal is to use Reinforcement Learning (RL) to dynamically learn the optimal stop-loss percentage from historical stock price data to maximize portfolio returns and minimize losses.
+
+
+---
+
+Summary of the Approach
+
+The approach uses Proximal Policy Optimization (PPO), a popular RL algorithm, to learn the best stop-loss percentage based on stock price movements and market indicators. The problem is framed as a reinforcement learning environment, where:
+
+1. The state consists of stock price, technical indicators (SMA and RSI), and current portfolio balance.
+
+
+2. The action is the stop-loss percentage, represented as a continuous value between 1% and 10%.
+
+
+3. The reward encourages the agent to maximize profits and penalizes stop-loss triggers that result in significant losses.
+
+
+
+By interacting with the stock price data over multiple episodes, the agent learns to adjust the stop-loss percentage dynamically to minimize losses and optimize returns.
+
+
+---
+
+Design of Functions
+
+1. StopLossEnv (Custom Environment Class)
+
+This class implements the trading environment compatible with OpenAI Gym.
+
+Purpose: Simulates stock price movements and evaluates the agent's stop-loss decisions.
+
+Key Methods:
+
+__init__: Initializes the environment with stock data, action space, and observation space.
+
+reset: Resets the environment to the initial state (portfolio balance, price indicators, etc.).
+
+step: Simulates one time step, calculates rewards based on stop-loss decisions, and updates the environment state.
+
+_get_observation: Constructs the current state for the agent, including price, SMA, RSI, and portfolio balance.
+
+render: Displays the current step's information for debugging or visualization.
+
+
+
+
+2. load_stock_data
+
+Purpose: Loads stock price data from a CSV file.
+
+Inputs: Path to a CSV file containing stock data with columns: price, quantity, buy/sell, transaction_time.
+
+Outputs: A Pandas DataFrame.
+
+
+
+3. train_agent
+
+Purpose: Trains the PPO agent on the custom environment.
+
+Inputs:
+
+env: The custom stop-loss environment.
+
+timesteps: Number of training iterations (default: 50,000).
+
+
+Outputs: A trained PPO model.
+
+
+
+4. evaluate_stop_loss
+
+Purpose: Evaluates the trained PPO agent's performance and calculates the average stop-loss percentage.
+
+Inputs:
+
+env: The custom stop-loss environment.
+
+model: The trained PPO model.
+
+
+Behavior:
+
+Runs the environment using the trained model.
+
+Logs actions (stop-loss percentages) and portfolio balance at each step.
+
+Computes the average stop-loss percentage across the evaluation run.
+
+
+
+
+5. main Execution
+
+Purpose: Orchestrates the workflow:
+
+1. Loads stock price data.
+
+
+2. Initializes the environment.
+
+
+3. Trains the PPO agent.
+
+
+4. Evaluates the agent's performance.
+
+
+
+Inputs: Path to the stock data CSV file.
+
+Outputs: Prints the average optimal stop-loss percentage and step-wise details of the agent's decisions.
+
+
+
+
+
+---
+
+Summary of Design
+
+1. Environment Design:
+
+Action Space: Continuous range [1%, 10%] for stop-loss percentage.
+
+State Space: Features include stock price, balance, SMA, and RSI.
+
+Reward: Balances penalties for hitting stop-loss and rewards for price gains.
+
+
+
+2. RL Algorithm:
+
+Uses PPO from stable-baselines3, which is suitable for continuous action spaces and ensures stable learning.
+
+
+
+3. Workflow:
+
+Data Preparation: Load stock data and compute technical indicators.
+
+Training: Train the agent using PPO on historical data.
+
+Evaluation: Run the agent on the environment and calculate the learned stop-loss percentage.
+
+
+
+
+
+---
+
+Key Benefits of the Design
+
+1. Dynamic Learning: The RL agent adapts to historical price patterns and learns the best stop-loss strategy.
+
+
+2. Continuous Actions: Allows fine-grained stop-loss percentages instead of restricting to fixed intervals.
+
+
+3. Market Awareness: Incorporates technical indicators (SMA, RSI) to improve decision-making.
+
+
+4. Scalability: The design can handle different stocks and longer historical datasets.
+
+
+
+
+---
+
+Let me know if you'd like further clarifications or enhancements!
+
