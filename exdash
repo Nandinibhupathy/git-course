@@ -1,3 +1,68 @@
+import re
+
+def process_query(query):
+    patterns = [
+        # (Pattern, Response, Description of Extracted Value)
+        (r'(?i)\b(exceptions)\b.*\b(trade\s?id)\b\s*(\d+)', 
+         'Exceptions for trade ID: {0}', 
+         'trade_id'),
+        
+        (r'(?i)\breplay\b.*\b(trade\s?id)\b\s*(\d+)', 
+         'Replay trade with ID: {0}', 
+         'trade_id'),
+        
+        (r'(?i)\bescalate\b.*\b(exception)\b.*\b(to)\b\s*(\w+)', 
+         'Escalate to: {0} for exception', 
+         'escalation_contact'),
+        
+        (r'(?i)\bshow\b.*\b(training\s?materials)\b.*\b(exception)\b\s*(\w+)', 
+         'Show training materials for exception: {0}', 
+         'exception_type'),
+        
+        (r'(?i)\bsummary\b.*\bunresolved\b.*\b(exception)\b', 
+         'Summary of unresolved exceptions', 
+         None),
+        
+        (r'(?i)\bsummary\b.*\b(exception)\b.*\b(occurred)\b.*\b(on)\b\s*(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4})', 
+         'Summary of exceptions on {0}', 
+         'date')
+    ]
+    
+    for pattern, response, value_key in patterns:
+        match = re.search(pattern, query)
+        if match:
+            # Extract specific values if capturing groups exist
+            extracted_value = match.group(match.lastindex) if match.lastindex else None
+            return {
+                'response': response.format(extracted_value) if extracted_value else response,
+                'extracted_value': {value_key: extracted_value} if value_key else None
+            }
+    return {
+        'response': "Sorry, I couldn't process your query.",
+        'extracted_value': None
+    }
+
+# Example queries
+queries = [
+    "What are the exceptions for trade id 12345?",
+    "Replay a trade with id 98765",
+    "Whom should I escalate to for the exception type XYZ",
+    "Show me training materials for handling exception type ABC",
+    "Give me summary of unresolved exceptions",
+    "Give me summary of exceptions that occurred on 2024-12-18"
+]
+
+for query in queries:
+    result = process_query(query)
+    print(f"Query: {query}")
+    print(f"Response: {result['response']}")
+    print(f"Extracted Value: {result['extracted_value']}\n")
+
+
+
+
+
+
 from datetime import datetime, timedelta
 import re
 
