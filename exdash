@@ -22,6 +22,108 @@ def handle_exceptions_on_date(date_or_range):
         return f"Generating summary of exceptions that occurred from {start_date} to {end_date}"
     return f"Generating summary of exceptions that occurred on {date_or_range}"
 
+def handle_exceptions_on_relative_date(relative_date):
+    return f"Generating summary of exceptions that occurred {relative_date}"
+
+# Main query processor
+def process_query(query):
+    patterns = [
+        (r'(?i)\bexceptions\b.*\btrade\s?id\s?(\d+)', 
+         handle_exceptions_for_trade, 
+         'trade_id'),
+        
+        (r'(?i)\breplay\b.*?\btrade\b.*?(?:id\s?)?(\d+)', 
+         handle_replay_trade, 
+         'trade_id'),
+        
+        (r'(?i)\bwhom\b.*\bescalate\b.*\bexception\b.*\btype\b\s?(\w+)', 
+         handle_escalation, 
+         'exception_type'),
+        
+        (r'(?i)\bshow\b.*\btraining\s?materials\b.*\bexception\b\s?type\s?(\w+)', 
+         handle_training_materials, 
+         'exception_type'),
+        
+        (r'(?i)\bsummary\b.*\bunresolved\b.*\bexceptions\b', 
+         handle_unresolved_exceptions, 
+         None),
+        
+        (r'(?i)\bsummary\b.*\bexceptions\b.*\boccurred\b.*\bon\b\s*(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4})(?:\s*to\s*(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}))?', 
+         handle_exceptions_on_date, 
+         'date_or_range'),
+        
+        (r'(?i)\bsummary\b.*\bexceptions\b.*\boccurred\b.*\b(on\s)?(today|yesterday|last\sweek|\d+\sday(?:s)?\sbefore)', 
+         handle_exceptions_on_relative_date, 
+         'relative_date')
+    ]
+    
+    for pattern, handler_function, value_key in patterns:
+        match = re.search(pattern, query)
+        if match:
+            if match.lastindex == 2:  # Date range (absolute dates)
+                start_date, end_date = match.group(1), match.group(2)
+                return handler_function((start_date, end_date))
+            elif match.lastindex == 1:  # Single value (absolute or relative)
+                extracted_value = match.group(1) or match.group(2)
+                return handler_function(extracted_value)
+            else:
+                return handler_function()  # Call the function without extracted value
+    return "Sorry, I couldn't process your query."
+
+# Example queries
+queries = [
+    "What are the exceptions for trade id 12345?",
+    "Replay a trade with id 98765",
+    "Whom should I escalate to for the exception type XYZ",
+    "Show me training materials for handling exception type ABC",
+    "Give me summary of unresolved exceptions",
+    "Give me summary of exceptions that occurred on 2024-12-18",
+    "Give me summary of exceptions that occurred on 2024-12-18 to 2024-12-20",
+    "Give me summary of exceptions that occurred yesterday",
+    "Give me summary of exceptions that occurred last week",
+    "Give me summary of exceptions that occurred 3 days before"
+]
+
+for query in queries:
+    print(f"Query: {query}")
+    print(f"Response: {process_query(query)}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+import re
+
+# Define individual functions for each query type
+def handle_exceptions_for_trade(trade_id):
+    return f"Handling exceptions for trade ID: {trade_id}"
+
+def handle_replay_trade(trade_id):
+    return f"Replaying trade with ID: {trade_id}"
+
+def handle_escalation(exception_type):
+    return f"Escalating issue for exception type: {exception_type}"
+
+def handle_training_materials(exception_type):
+    return f"Providing training materials for exception type: {exception_type}"
+
+def handle_unresolved_exceptions():
+    return "Generating summary of unresolved exceptions."
+
+def handle_exceptions_on_date(date_or_range):
+    if isinstance(date_or_range, tuple):
+        start_date, end_date = date_or_range
+        return f"Generating summary of exceptions that occurred from {start_date} to {end_date}"
+    return f"Generating summary of exceptions that occurred on {date_or_range}"
+
 # Main query processor
 def process_query(query):
     patterns = [
