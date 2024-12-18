@@ -22,6 +22,86 @@ def handle_exceptions_on_date(date):
 # Main query processor
 def process_query(query):
     patterns = [
+        # (Pattern, Function, Description of Extracted Value)
+        (r'(?i)\bexceptions\b.*\btrade\s?id\s?(\d+)', 
+         handle_exceptions_for_trade, 
+         'trade_id'),
+        
+        (r'(?i)\breplay\b.*\btrade\s?id\s?(\d+)', 
+         handle_replay_trade, 
+         'trade_id'),
+        
+        (r'(?i)\bescalate\b.*\bexception\b.*\bto\b\s*(\w+)', 
+         handle_escalation, 
+         'exception_type'),
+        
+        (r'(?i)\bshow\b.*\btraining\s?materials\b.*\bexception\b\s*(\w+)', 
+         handle_training_materials, 
+         'exception_type'),
+        
+        (r'(?i)\bsummary\b.*\bunresolved\b.*\bexceptions\b', 
+         handle_unresolved_exceptions, 
+         None),
+        
+        (r'(?i)\bsummary\b.*\bexceptions\b.*\boccurred\b.*\bon\b\s*(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4})', 
+         handle_exceptions_on_date, 
+         'date')
+    ]
+    
+    for pattern, handler_function, value_key in patterns:
+        match = re.search(pattern, query)
+        if match:
+            if match.lastindex:  # Extract specific value if available
+                extracted_value = match.group(1)  # Extract the first capturing group
+                return handler_function(extracted_value)  # Call the corresponding function with the extracted value
+            else:
+                return handler_function()  # Call the function without extracted value
+    return "Sorry, I couldn't process your query."
+
+# Example queries
+queries = [
+    "What are the exceptions for trade id 12345?",
+    "Replay a trade with id 98765",
+    "Whom should I escalate to for the exception type XYZ",
+    "Show me training materials for handling exception type ABC",
+    "Give me summary of unresolved exceptions",
+    "Give me summary of exceptions that occurred on 2024-12-18"
+]
+
+for query in queries:
+    print(f"Query: {query}")
+    print(f"Response: {process_query(query)}\n")
+
+
+
+
+
+
+
+import re
+
+# Define individual functions for each query type
+def handle_exceptions_for_trade(trade_id):
+    return f"Handling exceptions for trade ID: {trade_id}"
+
+def handle_replay_trade(trade_id):
+    return f"Replaying trade with ID: {trade_id}"
+
+def handle_escalation(exception_type):
+    return f"Escalating issue for exception type: {exception_type}"
+
+def handle_training_materials(exception_type):
+    return f"Providing training materials for exception type: {exception_type}"
+
+def handle_unresolved_exceptions():
+    return "Generating summary of unresolved exceptions."
+
+def handle_exceptions_on_date(date):
+    return f"Generating summary of exceptions that occurred on {date}"
+
+# Main query processor
+def process_query(query):
+    patterns = [
         # (Pattern, Function, Extracted Value Key)
         (r'(?i)\b(exceptions)\b.*\b(trade\s?id)\b\s*(\d+)', 
          handle_exceptions_for_trade, 
