@@ -100,3 +100,62 @@ print(single_date_counts)
 
 print("\nDate Range Counts:")
 print(date_range_counts)
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+
+# Load the CSV file
+file_path = 'your_file.csv'  # Replace with your file path
+df = pd.read_csv(file_path)
+
+# Convert 'errorOccurredTimestamp' to datetime for easier filtering
+df['errorOccurredTimestamp'] = pd.to_datetime(df['errorOccurredTimestamp'])
+
+def count_error_codes(df, start_date, end_date=None):
+    """
+    Filters the DataFrame based on the date or date range and counts occurrences of errorCode.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        start_date (str): The start date (format: yyyy-mm-dd).
+        end_date (str, optional): The end date (format: yyyy-mm-dd). If None, use only start_date.
+
+    Returns:
+        dict: A dictionary with errorCode as keys and their counts as values.
+    """
+    # Convert start_date and end_date to datetime.date objects
+    start_date = pd.to_datetime(start_date).date()
+    end_date = pd.to_datetime(end_date).date() if end_date else None
+    
+    if end_date:
+        # Filter for date range (extract date part from 'errorOccurredTimestamp')
+        mask = (df['errorOccurredTimestamp'].dt.date >= start_date) & (df['errorOccurredTimestamp'].dt.date <= end_date)
+    else:
+        # Filter for single date
+        mask = df['errorOccurredTimestamp'].dt.date == start_date
+    
+    filtered_df = df[mask]
+    
+    # Count occurrences of each unique errorCode and return as a dictionary
+    return filtered_df['errorCode'].value_counts().to_dict()
+
+# Example usage:
+# For a single date
+single_date_counts = count_error_codes(df, '2024-12-17')
+
+# For a date range
+date_range_counts = count_error_codes(df, '2024-12-15', '2024-12-17')
+
+print("Single Date Counts:")
+print(single_date_counts)
+
+print("\nDate Range Counts:")
+print(date_range_counts)
