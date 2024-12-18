@@ -1,0 +1,102 @@
+from datetime import datetime, timedelta
+import re
+
+def process_date_input(input_string):
+    today = datetime.today()
+    input_string = input_string.lower().strip()
+
+    # Check for direct date input
+    date_pattern = r"^\d{4}-\d{2}-\d{2}$"  # Matches 'YYYY-MM-DD'
+    date_range_pattern = r"^\d{4}-\d{2}-\d{2}\s*to\s*\d{4}-\d{2}-\d{2}$"  # Matches 'YYYY-MM-DD to YYYY-MM-DD'
+
+    if re.match(date_pattern, input_string):
+        # Single date
+        return f"Date: {input_string}"
+    elif re.match(date_range_pattern, input_string):
+        # Date range
+        start_date, end_date = map(str.strip, input_string.split("to"))
+        return f"Start Date: {start_date}, End Date: {end_date}"
+
+    # Handle predefined strings
+    if input_string == "today":
+        return today.strftime('%Y-%m-%d')
+    elif input_string == "yesterday":
+        return (today - timedelta(days=1)).strftime('%Y-%m-%d')
+    elif input_string == "day before yesterday":
+        return (today - timedelta(days=2)).strftime('%Y-%m-%d')
+    elif input_string == "this week":
+        start_of_week = today - timedelta(days=today.weekday() + 1) if today.weekday() != 6 else today
+        end_of_week = start_of_week + timedelta(days=6)
+        return f"Start: {start_of_week.strftime('%Y-%m-%d')}, End: {end_of_week.strftime('%Y-%m-%d')}"
+    elif input_string == "last week":
+        start_of_week = today - timedelta(days=today.weekday() + 1) if today.weekday() != 6 else today
+        last_week_start = start_of_week - timedelta(days=7)
+        last_week_end = last_week_start + timedelta(days=6)
+        return f"Start: {last_week_start.strftime('%Y-%m-%d')}, End: {last_week_end.strftime('%Y-%m-%d')}"
+    elif "days before" in input_string:
+        try:
+            days = int(input_string.split()[0])
+            return (today - timedelta(days=days)).strftime('%Y-%m-%d')
+        except ValueError:
+            return "Invalid input"
+    else:
+        return "Invalid input"
+
+# Examples
+print(process_date_input("2024-12-18"))  # Direct date input
+print(process_date_input("2024-12-15 to 2024-12-18"))  # Direct date range
+print(process_date_input("today"))  # Predefined string
+print(process_date_input("2 days before"))  # Predefined string
+print(process_date_input("last week"))  # Predefined string
+
+
+
+
+
+
+
+import pandas as pd
+
+# Load the CSV file
+file_path = 'your_file.csv'  # Replace with your file path
+df = pd.read_csv(file_path)
+
+# Convert 'errorOccuredTimestamp' to datetime for easier filtering
+df['errorOccuredTimestamp'] = pd.to_datetime(df['errorOccuredTimestamp'])
+
+def count_error_codes(df, start_date, end_date=None):
+    """
+    Filters the DataFrame based on the date or date range and counts occurrences of errorCode.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        start_date (str): The start date (format: yyyy-mm-dd).
+        end_date (str, optional): The end date (format: yyyy-mm-dd). If None, use only start_date.
+
+    Returns:
+        dict: A dictionary with errorCode as keys and their counts as values.
+    """
+    if end_date:
+        # Filter for date range
+        mask = (df['errorOccuredTimestamp'] >= pd.to_datetime(start_date)) & (df['errorOccuredTimestamp'] <= pd.to_datetime(end_date))
+    else:
+        # Filter for single date
+        mask = df['errorOccuredTimestamp'].dt.date == pd.to_datetime(start_date).date()
+    
+    filtered_df = df[mask]
+    
+    # Count occurrences of each unique errorCode and return as a dictionary
+    return filtered_df['errorCode'].value_counts().to_dict()
+
+# Example usage:
+# For a single date
+single_date_counts = count_error_codes(df, '2024-12-17')
+
+# For a date range
+date_range_counts = count_error_codes(df, '2024-12-15', '2024-12-17')
+
+print("Single Date Counts:")
+print(single_date_counts)
+
+print("\nDate Range Counts:")
+print(date_range_counts)
