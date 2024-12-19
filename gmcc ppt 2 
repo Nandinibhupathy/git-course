@@ -1,3 +1,20 @@
+1. The chatbot processes user queries using regex to identify the request type (e.g., filtering, resources, escalation).
+
+
+2. It uses pandas to filter and manipulate exception dashboard data based on the query.
+
+
+3. The chatbot provides relevant information like filtered exceptions, resolution resources, or escalation contacts.
+
+
+4. It simplifies data access for ops users, offering an easier way to interact with the exception dashboard.
+
+
+
+
+
+
+
 Here’s a summary of the approach and design of the functions for your chatbot:
 
 1. User Query Processing:
