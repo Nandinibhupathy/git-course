@@ -1,3 +1,64 @@
+Here’s a summary of the approach and design of the functions for your chatbot:
+
+1. User Query Processing:
+
+The chatbot listens to user input and processes the query using regex (regular expressions) to identify the type of request (e.g., filter by date, type of exception, resources, or escalation).
+
+The query is parsed to extract key details such as date ranges, exception types, or specific keywords related to resolution or escalation.
+
+
+
+2. Data Interaction:
+
+Pandas is used to handle and manipulate the data from the exception dashboard.
+
+The chatbot accesses the exception dashboard data stored in a structured format (likely CSV, Excel, or database).
+
+It performs filtering operations on the dataset based on the parsed query (e.g., filter exceptions by date, type, etc.).
+
+
+
+3. Functions for Specific Tasks:
+
+Filtering by Date and Type:
+
+The chatbot can apply filters on the data to show only the exceptions that match the user’s date range or exception type request.
+
+
+Providing Resolution Resources:
+
+The chatbot identifies the relevant resources for a given exception based on its characteristics and provides them to the user.
+
+
+Escalation Information:
+
+The chatbot identifies escalation contacts or the next steps based on the type or severity of the exception.
+
+
+
+
+4. Output Generation:
+
+Once the query is processed, the chatbot generates a response based on the filtered data or resources, and presents it to the user in a readable format (e.g., a list of exceptions, escalation contacts, or resolution steps).
+
+
+
+5. User Experience:
+
+The design focuses on ease of use, allowing ops users to quickly get the information they need from the exception dashboard without manually sifting through data.
+
+It is designed to be flexible and handle a variety of queries, simplifying interaction with complex datasets.
+
+
+
+
+This approach streamlines the process for ops users by automating data retrieval and providing tailored responses based on the user’s specific needs.
+
+
+
+
+
+
 Project Name: OpsEase Bot
 
 High-Level Description:
