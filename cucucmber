@@ -1,0 +1,77 @@
+// Scala dependencies
+scalaVersion := "2.13.12" // Adjust based on your Scala version
+
+// Cucumber dependencies
+libraryDependencies ++= Seq(
+  "io.cucumber" %% "cucumber-scala" % "8.16.0",
+  "io.cucumber" % "cucumber-junit" % "8.16.0" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.17" % Test
+)
+
+
+
+
+package com.example
+
+class Arithmetic {
+  def add(a: Int, b: Int): Int = a + b
+  def subtract(a: Int, b: Int): Int = a - b
+  def multiply(a: Int, b: Int): Int = a * b
+  def divide(a: Int, b: Int): Either[String, Int] =
+    if (b == 0) Left("Division by zero") else Right(a / b)
+}
+
+
+
+Feature: Arithmetic operations
+
+  Scenario: Add two numbers
+    Given I have numbers 5 and 3
+    When I add the numbers
+    Then the result should be 8
+
+  Scenario: Divide two numbers
+    Given I have numbers 10 and 2
+    When I divide the numbers
+    Then the result should be 5
+
+  Scenario: Division by zero
+    Given I have numbers 10 and 0
+    When I divide the numbers
+    Then the result should be "Division by zero"
+
+
+package com.example.steps
+
+import com.example.Arithmetic
+import io.cucumber.scala.{EN, ScalaDsl}
+import org.scalatest.matchers.should.Matchers
+
+class ArithmeticSteps extends ScalaDsl with EN with Matchers {
+
+  private val arithmetic = new Arithmetic
+  private var num1: Int = _
+  private var num2: Int = _
+  private var result: Any = _
+
+  Given("""I have numbers {int} and {int}""") { (a: Int, b: Int) =>
+    num1 = a
+    num2 = b
+  }
+
+  When("""I add the numbers""") {
+    result = arithmetic.add(num1, num2)
+  }
+
+  When("""I divide the numbers""") {
+    result = arithmetic.divide(num1, num2)
+  }
+
+  Then("""the result should be {int}""") { expected: Int =>
+    result shouldEqual expected
+  }
+
+  Then("""the result should be {string}""") { expected: String =>
+    result shouldEqual Left(expected)
+  }
+}
