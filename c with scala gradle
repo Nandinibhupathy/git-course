@@ -1,0 +1,79 @@
+plugins {
+    id 'scala'
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Scala Library
+    implementation 'org.scala-lang:scala-library:2.13.12'
+
+    // Cucumber Dependencies
+    implementation 'io.cucumber:cucumber-scala_2.13:7.16.0'
+    implementation 'io.cucumber:cucumber-junit:7.16.0'
+
+    // Test Dependencies
+    testImplementation 'org.scalatest:scalatest_2.13:3.2.16'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClass = 'your.package.Main' // Replace with your main class
+}
+
+
+
+
+
+
+
+
+
+Feature: Example Feature
+
+  Scenario: Sample scenario
+    Given I have a Scala project
+    When I run a test
+    Then it should pass successfully
+
+
+
+
+
+
+package steps
+
+import io.cucumber.scala.{EN, ScalaDsl}
+import org.scalatest.matchers.should.Matchers
+
+class ExampleSteps extends ScalaDsl with EN with Matchers {
+  Given("""^I have a Scala project$""") { () =>
+    println("Scala project initialized")
+  }
+
+  When("""^I run a test$""") { () =>
+    println("Running the test")
+  }
+
+  Then("""^it should pass successfully$""") { () =>
+    println("Test passed successfully")
+  }
+}
+
+
+
+
+package runner
+
+import io.cucumber.junit.Cucumber
+import org.junit.runner.RunWith
+
+@RunWith(classOf[Cucumber])
+class TestRunner
