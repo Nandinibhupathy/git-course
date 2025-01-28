@@ -1,4 +1,4 @@
-import scala.io.Source
+8import scala.io.Source
 
 object CSVToMap {
   def main(args: Array[String]): Unit = {
@@ -43,6 +43,38 @@ object CSVToMapWithFlatMap {
     val lines = Source.fromFile(filePath).getLines()
 
     // Extract the header and process the remaining lines using flatMap
+    val requestToMessageMap: Map[String, String] = lines
+      .drop(1) // Skip the header
+      .flatMap { line =>
+        val columns = line.split(",").map(_.trim) // Split by comma and trim spaces
+        if (columns.length >= 2) {
+          Some(columns(0) -> columns(1)) // Create a key-value pair
+        } else {
+          None // Handle cases where a line doesn't have enough columns
+        }
+      }
+      .toMap
+
+    // Print the Map
+    println(requestToMessageMap)
+  }
+}
+
+
+
+
+
+import scala.io.Source
+
+object CSVToMapWithToList {
+  def main(args: Array[String]): Unit = {
+    // Define the path to the CSV file
+    val filePath = "path/to/your/file.csv"
+
+    // Read the CSV file into a List
+    val lines: List[String] = Source.fromFile(filePath).getLines().toList
+
+    // Extract the header and process the remaining lines
     val requestToMessageMap: Map[String, String] = lines
       .drop(1) // Skip the header
       .flatMap { line =>
