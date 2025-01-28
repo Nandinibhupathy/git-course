@@ -1,0 +1,27 @@
+import scala.io.Source
+
+object CSVToMap {
+  def main(args: Array[String]): Unit = {
+    // Define the path to the CSV file
+    val filePath = "path/to/your/file.csv"
+
+    // Read the CSV file
+    val lines = Source.fromFile(filePath).getLines()
+
+    // Extract the header and skip it
+    val header = lines.next()
+
+    // Create a Map from the remaining lines
+    val requestToMessageMap: Map[String, String] = lines
+      .map(line => {
+        val columns = line.split(",").map(_.trim) // Split by comma and trim spaces
+        val requestRef = columns(0) // First column
+        val btmOutputMessage = columns(1) // Second column
+        requestRef -> btmOutputMessage // Create a key-value pair
+      })
+      .toMap
+
+    // Print the Map
+    println(requestToMessageMap)
+  }
+}
