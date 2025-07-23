@@ -1,77 +1,64 @@
-// Scala dependencies
-scalaVersion := "2.13.12" // Adjust based on your Scala version
-
-// Cucumber dependencies
-libraryDependencies ++= Seq(
-  "io.cucumber" %% "cucumber-scala" % "8.16.0",
-  "io.cucumber" % "cucumber-junit" % "8.16.0" % Test,
-  "org.scalatest" %% "scalatest" % "3.2.17" % Test
-)
+Here are clean, simple, and conversational speaking notes for your "Benefits to the Business & Value Provided" slide:
 
 
+---
+
+Slide: Business Benefits & Value
+
+"Let’s now talk about the value OpsEase brings to the business."
 
 
-package com.example
+---
 
-class Arithmetic {
-  def add(a: Int, b: Int): Int = a + b
-  def subtract(a: Int, b: Int): Int = a - b
-  def multiply(a: Int, b: Int): Int = a * b
-  def divide(a: Int, b: Int): Either[String, Int] =
-    if (b == 0) Left("Division by zero") else Right(a / b)
-}
+1. Improved Efficiency
+
+"First, it saves a lot of time.
+Ops users no longer need to manually filter through large datasets.
+With just one query, they get all the information they need — exceptions, resolution steps, and escalation contacts — all in one go."
 
 
+---
 
-Feature: Arithmetic operations
+2. Enhanced User Experience
 
-  Scenario: Add two numbers
-    Given I have numbers 5 and 3
-    When I add the numbers
-    Then the result should be 8
-
-  Scenario: Divide two numbers
-    Given I have numbers 10 and 2
-    When I divide the numbers
-    Then the result should be 5
-
-  Scenario: Division by zero
-    Given I have numbers 10 and 0
-    When I divide the numbers
-    Then the result should be "Division by zero"
+"Interacting with the system becomes much easier.
+Instead of needing deep system knowledge, users can just type natural language queries.
+This simplifies the whole process and makes it more accessible for everyone."
 
 
-package com.example.steps
+---
 
-import com.example.Arithmetic
-import io.cucumber.scala.{EN, ScalaDsl}
-import org.scalatest.matchers.should.Matchers
+3. Scalability
 
-class ArithmeticSteps extends ScalaDsl with EN with Matchers {
+"OpsEase is designed to scale.
+Its modular structure means we can easily plug in new data sources or features as the business grows — no rework needed."
 
-  private val arithmetic = new Arithmetic
-  private var num1: Int = _
-  private var num2: Int = _
-  private var result: Any = _
 
-  Given("""I have numbers {int} and {int}""") { (a: Int, b: Int) =>
-    num1 = a
-    num2 = b
-  }
+---
 
-  When("""I add the numbers""") {
-    result = arithmetic.add(num1, num2)
-  }
+4. Reduced Errors
 
-  When("""I divide the numbers""") {
-    result = arithmetic.divide(num1, num2)
-  }
+"Automation helps reduce human mistakes that usually happen during manual data lookups or filtering, which improves accuracy."
 
-  Then("""the result should be {int}""") { expected: Int =>
-    result shouldEqual expected
-  }
 
-  Then("""the result should be {string}""") { expected: String =>
-    result shouldEqual Left(expected)
-  }
-}
+---
+
+5. Cost Savings
+
+"By reducing manual effort, OpsEase also helps cut down on operational overhead, which can translate into real cost savings over time."
+
+
+---
+
+6. Standardized Support
+
+"And finally, it brings consistency.
+Everyone gets the same accurate information and resolution steps, which improves collaboration and reduces confusion."
+
+
+---
+
+"Together, these benefits make OpsEase a valuable tool — not just for ops teams, but for the business as a whole."
+
+Let me know if you want visual layout ideas or to shorten this for a time-constrained presentation.
+
